@@ -5,8 +5,9 @@ import java.util.HashSet;
 
 public class Term {
 
+    //the word
     private String id;
-    private int df;
-    private HashMap<String, Integer> docs;
+    //docFreq represents document frequency of the term
+    private int docFreq;
 
 }
