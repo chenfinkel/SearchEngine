@@ -44,6 +44,28 @@ public class ReadFile {
                 File file = folder.listFiles()[0];
                 Path path = file.toPath();
                 String text = new String(Files.readAllBytes(path));
+                String[] docs = text.split("</DOC>\n\n<DOC>\n");
+                docs[0] = docs[0].split("<DOC>\n")[1];
+                docs[docs.length-1] = docs[docs.length-1].split("</DOC>")[0];
+                for (int i = 0; i < docs.length; i++) {
+                    String[] splitToDocNum = docs[i].split("<DOCNO> ");
+                    String docNum = splitToDocNum[1];
+                    String[] subText = docNum.split(" </DOCNO>\n");
+                    docNum = subText[0];
+                    String textToParse = subText[1].split("<TEXT>\n")[1];
+                    textToParse = textToParse.split("</TEXT>\n")[0];
+                    parser.ParseDoc(textToParse, docNum);
+                }
+            }catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+
+
+
+
+                /**
                 String[] docs = text.split("</DOC>\n");
                 for (int i = 0; i < docs.length; i++) {
                     docs[i] = docs[i].split("\n<DOC>")[0];

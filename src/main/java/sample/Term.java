@@ -8,6 +8,12 @@ public class Term {
     //the word
     private String id;
     //docFreq represents document frequency of the term
-    private int docFreq;
+    private int docFreq = 0;
 
+    public Term() {}
+
+    public Term(String term) {
+        id = term;
+        docFreq++;
+    }
 }
