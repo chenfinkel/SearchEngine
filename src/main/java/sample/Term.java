@@ -16,4 +16,8 @@ public class Term {
         id = term;
         docFreq++;
     }
+
+    public String toString(){
+        return id;
+    }
 }

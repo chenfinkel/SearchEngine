@@ -19,7 +19,7 @@ public class Main /*extends Application*/ {
 
     public static void main(String[] args) {
         // *********** when we will have GUI the user will give the path of the corpus
-        ReadFile rf = new ReadFile("d:\\corpus");
+        ReadFile rf = new ReadFile("C:\\Users\\User\\Documents\\שנה ג\\אחזור\\מנוע\\corpus");
         rf.read();
         //launch(args);
     }
