@@ -28,7 +28,7 @@ public class ReadFile {
 
     public ReadFile(String path) {
         this.path = path;
-        parser = new Parse();
+        parser = new Parse("C:\\Users\\chenfi\\IdeaProjects\\stop_words.txt");
     }
 
     /**
@@ -39,6 +39,7 @@ public class ReadFile {
         File mainFolder = new File(path);
         File[] folders = mainFolder.listFiles();
         FileReader fr;
+        int count = 0;
         for (File folder : folders) {
             try {
                 File file = folder.listFiles()[0];
@@ -47,51 +48,28 @@ public class ReadFile {
                 String[] docs = text.split("</DOC>\n\n<DOC>\n");
                 docs[0] = docs[0].split("<DOC>\n")[1];
                 docs[docs.length-1] = docs[docs.length-1].split("</DOC>")[0];
-                for (int i = 0; i < docs.length; i++) {
-                    String[] splitToDocNum = docs[i].split("<DOCNO> ");
-                    String docNum = splitToDocNum[1];
-                    String[] subText = docNum.split(" </DOCNO>\n");
+                for (int i = 0; i < docs.length; i++) { count ++ ;
+                    String[] splitToDocNum = docs[i].split("<DOCNO>");
+                    String docNum = "";
+                    try {
+                        docNum = splitToDocNum[1];
+                    }catch(Exception e) {
+                        e.printStackTrace();
+                        System.out.println(docs[i]);
+                    }
+                    String[] subText = docNum.split("</DOCNO>\n");
                     docNum = subText[0];
-                    String textToParse = subText[1].split("<TEXT>\n")[1];
-                    textToParse = textToParse.split("</TEXT>\n")[0];
-                    parser.ParseDoc(textToParse, docNum);
+                    String s = subText[1];
+                    String[] textInDoc =  s.split("<TEXT>\n");
+                    if (textInDoc.length > 1) {
+                        String textToParse = textInDoc[1];
+                        textToParse = textToParse.split("</TEXT>\n")[0];
+                        parser.ParseDoc(textToParse, docNum);
+                    }
                 }
-            }catch (IOException e) {
-                e.printStackTrace();
-            }
 
-
-
-
-
-
-                /**
-                String[] docs = text.split("</DOC>\n");
-                for (int i = 0; i < docs.length; i++) {
-                    docs[i] = docs[i].split("\n<DOC>")[0];
-                }
-                for (int i = 0; i < docs.length; i++) {
-
-                }
-            }catch (Exception e) { e.printStackTrace(); }
-            /*try
-            {
-                File file = folder.listFiles()[0];
-                data = new String(Files.readAllBytes(Paths.get(file.getPath())));
-                Document document = Jsoup.parse(data);
-                Elements elements = document.getElementsByTag("DOC");
-                for (Element doc : elements) {
-                    String id = elements.first().getElementsByTag("DOCNO").text();
-                    String text = elements.first().getElementsByTag("TEXT").text();
-                    System.out.println(text);
-                    parser.ParseDoc(text, id);
-
-                }
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }*/
-
+            }catch (IOException e) { e.printStackTrace(); }
         }
+        System.out.println(count);
     }
 }

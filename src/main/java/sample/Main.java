@@ -6,6 +6,10 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class Main /*extends Application*/ {
 
     //@Override
@@ -19,8 +23,14 @@ public class Main /*extends Application*/ {
 
     public static void main(String[] args) {
         // *********** when we will have GUI the user will give the path of the corpus
-        ReadFile rf = new ReadFile("C:\\Users\\User\\Documents\\שנה ג\\אחזור\\מנוע\\corpus");
+        ReadFile rf = new ReadFile("C:\\Users\\chenfi\\IdeaProjects\\corpus");
+        DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date();
+        System.out.println(df.format(date));
         rf.read();
         //launch(args);
+        DateFormat df1 = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date1 = new Date();
+        System.out.println(df1.format(date1));
     }
 }

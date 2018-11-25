@@ -1,20 +1,26 @@
 package sample;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class Parse {
 
     private Indexer idxr;
+    private String stopWordsPath;
     //HashMap contains the terms of the document, and the location
-    //private HashMap<Term, Integer> docTerms;
-    /* >>>>>> QUESTIONS FOR YARIN <<<<<<<
-    What if a word appears in different locations in the document?
-    How can we check if a term already exists in the hashmap? 'containskey' will not work
-     */
     private HashMap<String, ArrayList<Integer>> docTerms;
+
 
     public Parse() {
         idxr = new Indexer();
+    }
+
+    public Parse(String stopWordsPath){
+        idxr = new Indexer();
+        this.stopWordsPath = stopWordsPath;
     }
 
     /**
@@ -24,12 +30,15 @@ public class Parse {
      */
 
     public void ParseDoc(String text, String id) {
+        if(text.equals("Index")) {
+            idxr.Index(docTerms);
+            docTerms = new HashMap<>();
+        }
         docTerms = new HashMap<>();
         ArrayList<String> list = tokenize(text);
         String currToken = "";
         String nextToken = "";
         Term t = null;
-        ////////////////stop words!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stop word and space for not deleting terms with it.
         for(int i = 0 ; i < list.size() ; i++) {
             int j = i;
             currToken = list.get(i);
@@ -65,7 +74,7 @@ public class Parse {
                 }
                 else if (isFraction(nextToken)) {
                     String num = currToken + " " + nextToken;
-                    if (list.get(i+2).equals("Dollars")) {
+                    if (i < list.size()-2 && list.get(i+2).equals("Dollars")) {
                         num = num + " Dollars";
                         i++;
                     }
@@ -121,7 +130,7 @@ public class Parse {
                 String term = "";
                 if (isYear(nextToken))
                     term = nextToken + "-" + month;
-                else if (isDay(nextToken))
+                else if (nextToken.length()==2 && isDay(nextToken))
                     term = currToken+ "-" + nextToken;
                 else
                     isDate = false;
@@ -142,12 +151,19 @@ public class Parse {
                         docTerms.remove(upperCase);
                 }
             }
-            //t = new Term(currToken);
             if (!docTerms.containsKey(currToken))
                 docTerms.put(currToken, new ArrayList<Integer>());
             docTerms.get(currToken).add(j);
         }
-        System.out.println("hi");
+        HashSet<String> stopWords = getStopWords();
+        Iterator it = docTerms.keySet().iterator();
+        while(it.hasNext()) {
+            String term = (String)it.next();
+            if (stopWords.contains(term)) {
+                it.remove();
+            }
+        }
+       // idxr.Index(docTerms);
     }
 
     private boolean isYear(String s) {
@@ -168,6 +184,18 @@ public class Parse {
         if (day >= 0 && day <= 31)
             return true;
         return false;
+    }
+
+    private HashSet<String> getStopWords(){
+        HashSet<String> sw = new HashSet<>();
+        Path path = Paths.get(stopWordsPath);
+        try {
+            String text = new String(Files.readAllBytes(path));
+            String[] stopWordsArray = text.split(System.lineSeparator());
+            for (int i = 0; i < stopWordsArray.length; i++)
+                sw.add(stopWordsArray[i]);
+        }catch(Exception e){ e.printStackTrace(); }
+        return sw;
     }
 
     private String isMonth(String s){
@@ -300,7 +328,7 @@ public class Parse {
                 num = num + s.charAt(i);
         int counter = 0;
         int digitsBeforeDot = num.length() - base;
-        for (int i = num.length()-1; i >= 0; i--) {
+        for (int i = num.length()-1; i >= base; i--) {
             if (num.charAt(i) == '0')
                 counter++;
             else
@@ -309,7 +337,7 @@ public class Parse {
         if (counter == base)
             return num.substring(0, digitsBeforeDot) + suffix;
         num = num.substring(0, num.length()-counter);
-        String ans = num.substring(0, digitsBeforeDot) + "." + num.substring(digitsBeforeDot, num.length())+suffix;
+        String ans = num.substring(0, digitsBeforeDot) + "." + num.substring(digitsBeforeDot, num.length()) + suffix;
         return ans;
     }
 
