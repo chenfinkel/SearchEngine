@@ -23,14 +23,12 @@ public class Main /*extends Application*/ {
 
     public static void main(String[] args) {
         // *********** when we will have GUI the user will give the path of the corpus
-        ReadFile rf = new ReadFile("C:\\Users\\chenfi\\IdeaProjects\\corpus");
-        DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date date = new Date();
-        System.out.println(df.format(date));
+        ReadFile rf = new ReadFile("C:\\Users\\User\\Documents\\שנה ג\\אחזור\\מנוע\\originalCorpus");
+        long StartTime = System.nanoTime();
         rf.read();
         //launch(args);
-        DateFormat df1 = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date date1 = new Date();
-        System.out.println(df1.format(date1));
+        long EndTime = System.nanoTime();
+        double totalTime = (EndTime - StartTime)/1000000.0;
+        System.out.println("Total time:  " + totalTime/60000.0 + " min");
     }
 }

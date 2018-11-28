@@ -8,6 +8,7 @@ import java.util.*;
 
 public class Parse {
 
+
     private Indexer idxr;
     private String stopWordsPath;
     //HashMap contains the terms of the document, and the location
@@ -26,18 +27,18 @@ public class Parse {
     /**
      *
      * @param text is the document text
-     * @param id is the id of the document
+     * @param docID is the id of the document
      */
 
-    public void ParseDoc(String text, String id) {
-        if(text.equals("Index")) {
-            idxr.Index(docTerms);
-            docTerms = new HashMap<>();
+    public void ParseDoc(String text, String docID) {
+        if(text.equals("index")) {
+            idxr.Index(null, docID);
         }
         docTerms = new HashMap<>();
         ArrayList<String> list = tokenize(text);
         String currToken = "";
         String nextToken = "";
+        String newToken = "";
         Term t = null;
         for(int i = 0 ; i < list.size() ; i++) {
             int j = i;
@@ -45,83 +46,88 @@ public class Parse {
             if (i != list.size() -1)
                 nextToken = list.get(i+1);
             if(isANumber(currToken)) {
-                if (nextToken.equals("percent") || nextToken.equals("percentage")) {
-                    currToken = currToken + "%";
+                if (nextToken.equalsIgnoreCase("percent") || nextToken.equalsIgnoreCase("percentage")) {
+                    newToken = currToken + "%";
                     i++;
                 }
-                else if (nextToken.equals("Dollars")) {
-                    currToken = parsePrice(currToken);
+                else if (nextToken.equalsIgnoreCase("kilometers") || nextToken.equals("km")){
+                    newToken = currToken + " km";
                     i++;
                 }
-                else if (i < list.size()-3 && list.get(i+2).equals("U.S") && list.get(i+3).equals("dollars")) {
+                else if (nextToken.equalsIgnoreCase("Dollars")) {
+                    newToken = parsePrice(currToken);
+                    i++;
+                }
+                else if (i < list.size()-3 && list.get(i+2).equals("U.S") && list.get(i+3).equalsIgnoreCase("dollars")) {
                     boolean isPrice = true;
                     String term = "";
-                    if (nextToken.equals("billion"))
+                    if (nextToken.equalsIgnoreCase("billion"))
                         term = currToken + "000";
-                    else if (nextToken.equals("trillion"))
+                    else if (nextToken.equalsIgnoreCase("trillion"))
                         term = currToken + "000000";
-                    else if (nextToken.equals("million"))
+                    else if (nextToken.equalsIgnoreCase("million"))
                         term = currToken;
                     else
                         isPrice = false;
                     if (isPrice) {
-                        currToken = term + " M Dollars";
+                        newToken = term + " M Dollars";
                         i = i+3;
                     }
                 }
                 else if (currToken.indexOf(',') >= 0) {
-                    String num = ParseNumWithCommas(currToken);
+                    newToken = ParseNumWithCommas(currToken);
                 }
                 else if (isFraction(nextToken)) {
                     String num = currToken + " " + nextToken;
-                    if (i < list.size()-2 && list.get(i+2).equals("Dollars")) {
+                    if (i < list.size()-2 && list.get(i+2).equalsIgnoreCase("Dollars")) {
                         num = num + " Dollars";
                         i++;
                     }
+                    newToken = num;
                     i++;
                 }
-                else if (nextToken.equals("Trillion")) {
-                    currToken = currToken + "00B";
+                else if (nextToken.equalsIgnoreCase("Trillion")) {
+                    newToken = currToken + "000B";
                     i++;
                 }
-                else if (nextToken.equals("Billion")) {
-                    currToken = currToken + "B";
+                else if (nextToken.equalsIgnoreCase("Billion")) {
+                    newToken = currToken + "B";
                     i++;
                 }
-                else if (nextToken.equals("Million")) {
-                    currToken = currToken + "M";
+                else if (nextToken.equalsIgnoreCase("Million")) {
+                    newToken = currToken + "M";
                     i++;
                 }
-                else if (nextToken.equals("Thousand")) {
-                    currToken = currToken + "K";
+                else if (nextToken.equalsIgnoreCase("Thousand")) {
+                    newToken = currToken + "K";
                     i++;
                 }
                 else if(currToken.length() == 2 && isDay(currToken) && !isMonth(nextToken).equals("false")){
                     String month = isMonth(nextToken);
-                    currToken = month + "-" + currToken;
+                    newToken = month + "-" + currToken;
                     i++;
                 }
             }
             else if (currToken.charAt(0) == '$' && isANumber(currToken.substring(1, currToken.length()))){
                 i++;
-                currToken = currToken.substring(1, currToken.length());
-                if (nextToken.equals("million"))
-                    currToken = currToken + " M Dollars";
-                else if (nextToken.equals("billion"))
-                    currToken = currToken+"000 M Dollars";
-                else if (nextToken.equals("trillion"))
-                    currToken = currToken+"000000 M Dollars";
+                newToken = currToken.substring(1, currToken.length());
+                if (nextToken.equalsIgnoreCase("million"))
+                    newToken = currToken + " M Dollars";
+                else if (nextToken.equalsIgnoreCase("billion"))
+                    newToken = currToken+"000 M Dollars";
+                else if (nextToken.equalsIgnoreCase("trillion"))
+                    newToken = currToken+"000000 M Dollars";
                 else {
-                    currToken = parsePrice(currToken);
+                    newToken = parsePrice(currToken);
                     i--;
                 }
             }
-            else if (isMillions(currToken) && nextToken.equals("Dollars")){
-                currToken = currToken.substring(0, currToken.length()-1) + " M Dollars";
+            else if (isMillions(currToken) && nextToken.equalsIgnoreCase("Dollars")){
+                newToken = currToken.substring(0, currToken.length()-1) + " M Dollars";
                 i++;
             }
-            else if (isBillions(currToken) && nextToken.equals("Dollars")){
-                currToken = currToken.substring(0, currToken.length()-2) + "000 M Dollars";
+            else if (isBillions(currToken, nextToken) && i+2 < list.size() && list.get(1+2).equalsIgnoreCase("Dollars")){
+                newToken = currToken.substring(0, currToken.length()-2) + "000 M Dollars";
                 i++;
             }
             else if (!isMonth(currToken).equals("false")){
@@ -136,24 +142,24 @@ public class Parse {
                     isDate = false;
                 if (isDate) {
                     i++;
-                    currToken = term;
+                    newToken = term;
                 }
             } else {
                 if (Character.isUpperCase(currToken.charAt(0))) {
                     String lowerCase = currToken.toLowerCase();
                     if (docTerms.containsKey(lowerCase))
-                        currToken = lowerCase;
+                        newToken = lowerCase;
                     else
-                        currToken = currToken.toUpperCase();
+                        newToken = currToken.toUpperCase();
                 } else {
                     String upperCase = currToken.toUpperCase();
                     if (docTerms.containsKey(upperCase))
                         docTerms.remove(upperCase);
                 }
             }
-            if (!docTerms.containsKey(currToken))
-                docTerms.put(currToken, new ArrayList<Integer>());
-            docTerms.get(currToken).add(j);
+            if (!docTerms.containsKey(newToken))
+                docTerms.put(newToken, new ArrayList<Integer>());
+            docTerms.get(newToken).add(j);
         }
         HashSet<String> stopWords = getStopWords();
         Iterator it = docTerms.keySet().iterator();
@@ -163,7 +169,7 @@ public class Parse {
                 it.remove();
             }
         }
-       // idxr.Index(docTerms);
+       idxr.Index(docTerms, docID);
     }
 
     private boolean isYear(String s) {
@@ -200,52 +206,52 @@ public class Parse {
 
     private String isMonth(String s){
         if (s.length() == 3) {
-            if (s.equals("Jen"))
+            if (s.equalsIgnoreCase("Jen"))
                 return "01";
-            if (s.equals("Feb"))
+            if (s.equalsIgnoreCase("Feb"))
                 return "02";
-            if (s.equals("Mar"))
+            if (s.equalsIgnoreCase("Mar"))
                 return "03";
-            if (s.equals("Apr"))
+            if (s.equalsIgnoreCase("Apr"))
                 return "04";
-            if (s.equals("MAY") || s.equals("May"))
+            if (s.equalsIgnoreCase("May"))
                 return "05";
-            if (s.equals("Jun"))
+            if (s.equalsIgnoreCase("Jun"))
                 return "06";
-            if (s.equals("Jul"))
+            if (s.equalsIgnoreCase("Jul"))
                 return "07";
-            if (s.equals("Aug"))
+            if (s.equalsIgnoreCase("Aug"))
                 return "08";
-            if (s.equals("Sep"))
+            if (s.equalsIgnoreCase("Sep"))
                 return "09";
-            if (s.equals("Oct"))
+            if (s.equalsIgnoreCase("Oct"))
                 return "10";
-            if (s.equals("Nov"))
+            if (s.equalsIgnoreCase("Nov"))
                 return "11";
-            if (s.equals("Dec"))
+            if (s.equalsIgnoreCase("Dec"))
                 return "12";
         }
-        if (s.equals("January") || s.equals("JANUARY"))
+        if (s.equalsIgnoreCase("January"))
             return "01";
-        if (s.equals("February") || s.equals("FEBRUARY"))
+        if (s.equalsIgnoreCase("February"))
             return "02";
-        if (s.equals("March") || s.equals("MARCH"))
+        if (s.equalsIgnoreCase("March"))
               return "03";
-        if (s.equals("April") || s.equals("APRIL"))
+        if (s.equalsIgnoreCase("April"))
             return "04";
-        if (s.equals("June") || s.equals("JUNE"))
+        if (s.equalsIgnoreCase("June"))
             return "06";
-        if (s.equals("July") || s.equals("JULY"))
+        if (s.equalsIgnoreCase("July"))
             return "07";
-        if (s.equals("August") || s.equals("AUGUST"))
+        if (s.equalsIgnoreCase("August"))
             return "08";
-        if (s.equals("September") || s.equals("SEPTEMBER"))
+        if (s.equalsIgnoreCase("September"))
             return "09";
-        if (s.equals("October") || s.equals("OCTOBER"))
+        if (s.equalsIgnoreCase("October"))
             return "10";
-        if (s.equals("November") || s.equals("NOVEMBER"))
+        if (s.equalsIgnoreCase("November"))
             return "11";
-        if (s.equals("December") || s.equals("DECEMBER"))
+        if (s.equalsIgnoreCase("December"))
             return "12";
         return "false";
     }
@@ -347,8 +353,8 @@ public class Parse {
         return false;
     }
 
-    private boolean isBillions(String s) {
-        if (s.length() > 1 && s.substring(s.length()-2, s.length()).equals("bn") && isANumber(s.substring(0, s.length()-2)))
+    private boolean isBillions(String s, String next) {
+        if (isANumber(s) && next.equalsIgnoreCase("bn"))
             return true;
         return false;
     }

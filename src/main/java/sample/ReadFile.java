@@ -4,17 +4,10 @@ package sample;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Scanner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import com.sun.deploy.util.StringUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.*;
-import org.jsoup.select.Elements;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ReadFile {
 
@@ -28,7 +21,7 @@ public class ReadFile {
 
     public ReadFile(String path) {
         this.path = path;
-        parser = new Parse("C:\\Users\\chenfi\\IdeaProjects\\stop_words.txt");
+        parser = new Parse("C:\\Users\\User\\Documents\\שנה ג\\אחזור\\מנוע\\stop_words.txt");
     }
 
     /**
@@ -48,7 +41,14 @@ public class ReadFile {
                 String[] docs = text.split("</DOC>\n\n<DOC>\n");
                 docs[0] = docs[0].split("<DOC>\n")[1];
                 docs[docs.length-1] = docs[docs.length-1].split("</DOC>")[0];
-                for (int i = 0; i < docs.length; i++) { count ++ ;
+                int docsParsed = 0;
+                for (int i = 0; i < docs.length; i++) {
+                    if (docsParsed == 10000){
+                        parser.ParseDoc("index", "");
+                        docsParsed = 0;
+                        i--;
+                    }
+                    count ++ ;
                     String[] splitToDocNum = docs[i].split("<DOCNO>");
                     String docNum = "";
                     try {
@@ -60,16 +60,20 @@ public class ReadFile {
                     String[] subText = docNum.split("</DOCNO>\n");
                     docNum = subText[0];
                     String s = subText[1];
-                    String[] textInDoc =  s.split("<TEXT>\n");
-                    if (textInDoc.length > 1) {
-                        String textToParse = textInDoc[1];
-                        textToParse = textToParse.split("</TEXT>\n")[0];
-                        parser.ParseDoc(textToParse, docNum);
+                    String[] textsInDoc =  s.split("<TEXT>\n");
+                    if (textsInDoc.length > 1) {
+                        for (int j = 1; j < textsInDoc.length; j++) {
+                            String textToParse = textsInDoc[j];
+                            textToParse = textToParse.split("</TEXT>\n")[0];
+                            parser.ParseDoc(textToParse, docNum);
+                            docsParsed++;
+                        }
                     }
                 }
+                parser.ParseDoc("index", "");
 
             }catch (IOException e) { e.printStackTrace(); }
         }
-        System.out.println(count);
+        System.out.println("Number of docs: " + count);
     }
 }

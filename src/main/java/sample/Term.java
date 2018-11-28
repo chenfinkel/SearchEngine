@@ -20,4 +20,8 @@ public class Term {
     public String toString(){
         return id;
     }
+
+    public void increaseDF(){
+        docFreq++;
+    }
 }
