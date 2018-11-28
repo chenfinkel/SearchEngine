@@ -32,15 +32,11 @@ public class ReadFile {
         File mainFolder = new File(path);
         File[] folders = mainFolder.listFiles();
         FileReader fr;
-        int count = 0;
         for (File folder : folders) {
             try {
                 File file = folder.listFiles()[0];
-                Path path = file.toPath();
-                String text = new String(Files.readAllBytes(path));
-                String[] docs = text.split("</DOC>\n\n<DOC>\n");
-                docs[0] = docs[0].split("<DOC>\n")[1];
-                docs[docs.length-1] = docs[docs.length-1].split("</DOC>")[0];
+                String fileBody = FileUtils.readFileToString(file);
+                String[] docs = StringUtils.substringsBetween(fileBody, "<DOC>", "</DOC>");
                 int docsParsed = 0;
                 for (int i = 0; i < docs.length; i++) {
                     if (docsParsed == 10000){
@@ -48,24 +44,13 @@ public class ReadFile {
                         docsParsed = 0;
                         i--;
                     }
-                    count ++ ;
-                    String[] splitToDocNum = docs[i].split("<DOCNO>");
-                    String docNum = "";
-                    try {
-                        docNum = splitToDocNum[1];
-                    }catch(Exception e) {
-                        e.printStackTrace();
-                        System.out.println(docs[i]);
-                    }
-                    String[] subText = docNum.split("</DOCNO>\n");
-                    docNum = subText[0];
-                    String s = subText[1];
-                    String[] textsInDoc =  s.split("<TEXT>\n");
-                    if (textsInDoc.length > 1) {
-                        for (int j = 1; j < textsInDoc.length; j++) {
+                    String docID = StringUtils.substringBetween(docs[i], "<DOCNO>", "</DOCNO>");
+                    String[] textsInDoc = StringUtils.substringsBetween(docs[i], "<TEXT>", "</TEXT>");
+                    if (textsInDoc != null) {
+                        for (int j = 0; j < textsInDoc.length; j++) {
                             String textToParse = textsInDoc[j];
                             textToParse = textToParse.split("</TEXT>\n")[0];
-                            parser.ParseDoc(textToParse, docNum);
+                            parser.ParseDoc(textToParse, docID);
                             docsParsed++;
                         }
                     }
@@ -74,6 +59,5 @@ public class ReadFile {
 
             }catch (IOException e) { e.printStackTrace(); }
         }
-        System.out.println("Number of docs: " + count);
     }
 }

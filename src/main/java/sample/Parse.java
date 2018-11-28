@@ -55,24 +55,22 @@ public class Parse {
                     i++;
                 }
                 else if (nextToken.equalsIgnoreCase("Dollars")) {
-                    newToken = parsePrice(currToken);
+                    newToken = parsePrice(currToken, "s");
                     i++;
                 }
-                else if (i < list.size()-3 && list.get(i+2).equals("U.S") && list.get(i+3).equalsIgnoreCase("dollars")) {
-                    boolean isPrice = true;
-                    String term = "";
-                    if (nextToken.equalsIgnoreCase("billion"))
-                        term = currToken + "000";
-                    else if (nextToken.equalsIgnoreCase("trillion"))
-                        term = currToken + "000000";
-                    else if (nextToken.equalsIgnoreCase("million"))
-                        term = currToken;
-                    else
-                        isPrice = false;
-                    if (isPrice) {
-                        newToken = term + " M Dollars";
+                else if (i < list.size()-2 && list.get(i+2).equalsIgnoreCase("dollars") &&
+                    (newToken.equalsIgnoreCase("bn") || newToken.equalsIgnoreCase("m"))){
+                    newToken = parsePrice(currToken, nextToken);
+                    i = i+2;
+                }
+                else if (i < list.size()-3 && list.get(i+2).equalsIgnoreCase("U.S") && list.get(i+3).equalsIgnoreCase("dollars")) {
+                    newToken = parsePrice(currToken, nextToken);
+                    if (newToken.equalsIgnoreCase("millions") ||
+                            newToken.equalsIgnoreCase("billions") ||
+                            newToken.equalsIgnoreCase("trillions"))
                         i = i+3;
-                    }
+                    else
+                        i = i+2;
                 }
                 else if (currToken.indexOf(',') >= 0) {
                     newToken = ParseNumWithCommas(currToken);
@@ -108,27 +106,12 @@ public class Parse {
                     i++;
                 }
             }
-            else if (currToken.charAt(0) == '$' && isANumber(currToken.substring(1, currToken.length()))){
-                i++;
-                newToken = currToken.substring(1, currToken.length());
-                if (nextToken.equalsIgnoreCase("million"))
-                    newToken = currToken + " M Dollars";
-                else if (nextToken.equalsIgnoreCase("billion"))
-                    newToken = currToken+"000 M Dollars";
-                else if (nextToken.equalsIgnoreCase("trillion"))
-                    newToken = currToken+"000000 M Dollars";
-                else {
-                    newToken = parsePrice(currToken);
-                    i--;
-                }
-            }
-            else if (isMillions(currToken) && nextToken.equalsIgnoreCase("Dollars")){
-                newToken = currToken.substring(0, currToken.length()-1) + " M Dollars";
-                i++;
-            }
-            else if (isBillions(currToken, nextToken) && i+2 < list.size() && list.get(1+2).equalsIgnoreCase("Dollars")){
-                newToken = currToken.substring(0, currToken.length()-2) + "000 M Dollars";
-                i++;
+            else if (currToken.length() > 1 && currToken.charAt(0) == '$' && isANumber(currToken.substring(1, currToken.length()))){
+                newToken = parsePrice(currToken.substring(1, currToken.length()), nextToken);
+                if (newToken.equalsIgnoreCase("millions") ||
+                        newToken.equalsIgnoreCase("billions") ||
+                        newToken.equalsIgnoreCase("trillions"))
+                    i++;
             }
             else if (!isMonth(currToken).equals("false")){
                 boolean isDate = true;
@@ -145,17 +128,7 @@ public class Parse {
                     newToken = term;
                 }
             } else {
-                if (Character.isUpperCase(currToken.charAt(0))) {
-                    String lowerCase = currToken.toLowerCase();
-                    if (docTerms.containsKey(lowerCase))
-                        newToken = lowerCase;
-                    else
-                        newToken = currToken.toUpperCase();
-                } else {
-                    String upperCase = currToken.toUpperCase();
-                    if (docTerms.containsKey(upperCase))
-                        docTerms.remove(upperCase);
-                }
+                newToken = currToken;
             }
             if (!docTerms.containsKey(newToken))
                 docTerms.put(newToken, new ArrayList<Integer>());
@@ -256,23 +229,52 @@ public class Parse {
         return "false";
     }
 
-    private String parsePrice(String s) {
-        int counter = 0;
-        for (int i = 0; i < s.length(); i++) {
-            if (Character.isDigit(s.charAt(i)))
-                counter++;
+    private String parsePrice(String s, String next) {
+        String numNoCommas = "";
+        for (int i = 0; i < s.length(); i++){
+            if (s.charAt(i) != ',')
+                numNoCommas = numNoCommas + s.charAt(i);
         }
-        if (counter < 7 || s.indexOf('.') >= 0) {
-            return s+" Dollars";
+        double num = Double.parseDouble(numNoCommas);
+        String price = "";
+        if (next.equalsIgnoreCase("billions") || next.equalsIgnoreCase("bn")) {
+            num = num * 1000;
+            if (num == (int) num)
+                price = (int)num + " M Dollars";
+            else
+                price = num + " M Dollars";
+        }else if (next.equalsIgnoreCase("trillions")) {
+            num = num * 1000000;
+            if (num == (int) num)
+                price = (int)num + " M Dollars";
+            else
+                price = num+ " M Dollars";
+        }else if (next.equalsIgnoreCase("millions") || next.equalsIgnoreCase("m")|| num >= 1000000) {
+            num = num / 1000000;
+            if (num == (int) num)
+                price = (int)num + " M Dollars";
+            else
+                price = num+ " M Dollars";
+        }else{
+            price = s + "Dollars";
         }
-        String value = parseNumberByBase(s, 6, " M");
-        return value + " Dollars";
+        return price;
     }
 
     private boolean isANumber(String s) {
-        for(char c : s.toCharArray())
+        boolean dotExist = false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (i==0 && !Character.isDigit(c))
+                return false;
             if(!Character.isDigit(c) && c != '.' && c != ',')
                 return false;
+            if(c == '.'){
+                if (dotExist)
+                    return false;
+                dotExist = true;
+            }
+        }
         return true;
     }
 
@@ -283,16 +285,34 @@ public class Parse {
         return true;
     }
 
-    private String ParseNumWithCommas(String s) {
-        String ans = "";
-        s = s.replace(',', '.');
-        if (s.length() > 4 && s.length() < 8)
-            ans = parseThousandsWithCommas(s);
-        else if (s.length() > 8 && s.length() < 12)
-            ans = parseMillionsWithCommas(s);
-        else if (s.length() > 12)
-            ans = parseNumberByBase(s, 9, "B");
-        return ans;
+    private String ParseNumWithCommas(String s){
+        String numNoCommas = "";
+        for (int i = 0; i < s.length(); i++){
+            if (s.charAt(i) != ',')
+                numNoCommas = numNoCommas + s.charAt(i);
+        }
+        double num = Double.parseDouble(numNoCommas);
+        String Snum = "";
+        if (num >= 1000000000){
+            num = num/1000000000;
+            if (num == (int)num)
+                Snum = (int)num + "B";
+            else
+                Snum = num + "B";
+        } else if(num >= 1000000){
+            num = num/1000000;
+            if (num == (int)num)
+                Snum = (int)num + "M";
+            else
+                Snum = num + "M";
+        } else if (num >= 1000){
+            num = num/1000;
+            if (num == (int)num)
+                Snum = (int)num + "K";
+            else
+                Snum = num + "K";
+        }
+        return Snum;
     }
 
     private String parseThousandsWithCommas(String s) {
@@ -330,7 +350,7 @@ public class Parse {
     private String parseNumberByBase(String s, int base, String suffix) {
         String num = "";
         for (int i = 0; i < s.length(); i++)
-            if (s.charAt(i) != '.' && s.charAt(i) != ',')
+            if (Character.isDigit(s.charAt(i)))
                 num = num + s.charAt(i);
         int counter = 0;
         int digitsBeforeDot = num.length() - base;
@@ -342,21 +362,19 @@ public class Parse {
         }
         if (counter == base)
             return num.substring(0, digitsBeforeDot) + suffix;
-        num = num.substring(0, num.length()-counter);
-        String ans = num.substring(0, digitsBeforeDot) + "." + num.substring(digitsBeforeDot, num.length()) + suffix;
+        String ans = "";
+        try {
+            num = num.substring(0, num.length() - counter);
+            ans = num.substring(0, digitsBeforeDot) + "." + num.substring(digitsBeforeDot, num.length()) + suffix;
+        }catch (Exception e){
+            System.out.println("s: " + s);
+            System.out.println("Base: " + base);
+            System.out.println("Suffix: " + suffix);
+            System.out.println("Digits: "+ digitsBeforeDot);
+            System.out.println("Counter: " + counter);
+            e.printStackTrace();
+        }
         return ans;
-    }
-
-    private boolean isMillions(String s){
-        if (s.charAt(s.length()-1) == 'm' && isANumber(s.substring(0, s.length()-1)))
-            return true;
-        return false;
-    }
-
-    private boolean isBillions(String s, String next) {
-        if (isANumber(s) && next.equalsIgnoreCase("bn"))
-            return true;
-        return false;
     }
 
     /**
@@ -368,24 +386,24 @@ public class Parse {
         String finalText = "";
         String[] splitByCommaSpace = text.split(", ");
         for(int i = 0; i < splitByCommaSpace.length; i++)
-            finalText = finalText + splitByCommaSpace[i] + " ";
+            finalText = finalText + splitByCommaSpace[i] + "~";
         String[] splitByDashSpace = finalText.split("- ");
         finalText = "";
         for(int i = 0; i < splitByDashSpace.length; i++)
-            finalText = finalText + splitByDashSpace[i] + " ";
+            finalText = finalText + splitByDashSpace[i] + "~";
         String[] splitBySpaceDash = finalText.split(" -");
         finalText = "";
         for(int i = 0; i < splitBySpaceDash.length; i++)
-            finalText = finalText + splitBySpaceDash[i] + " ";
+            finalText = finalText + splitBySpaceDash[i] + "~";
         String[] splitByDotN = finalText.split("\\.\n");
         finalText = "";
         for(int i = 0; i < splitByDotN.length; i++)
-            finalText = finalText + splitByDotN[i] + " ";
+            finalText = finalText + splitByDotN[i] + "~";
         String[] splitByDotSpace = finalText.split("\\. ");
         finalText = "";
         for(int i = 0; i < splitByDotSpace.length; i++)
-            finalText = finalText + splitByDotSpace[i] + " ";
-        StringTokenizer st = new StringTokenizer(finalText, "\n!; ()[]{}?\"");
+            finalText = finalText + splitByDotSpace[i] + "~";
+        StringTokenizer st = new StringTokenizer(finalText, "~\n!; ()[]{}?\"");
         ArrayList<String> list = new ArrayList<>();
         while (st.hasMoreTokens())
             list.add(st.nextToken());

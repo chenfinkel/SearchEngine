@@ -46,4 +46,17 @@ public class Indexer {
         }
     }
 
+    // CHECK UPPERCASE CODE
+    /*if (Character.isUpperCase(currToken.charAt(0))) {
+                    String lowerCase = currToken.toLowerCase();
+                    if (docTerms.containsKey(lowerCase))
+                        newToken = lowerCase;
+                    else
+                        newToken = currToken.toUpperCase();
+                } else {
+                    String upperCase = currToken.toUpperCase();
+                    if (docTerms.containsKey(upperCase))
+                        docTerms.remove(upperCase);
+                }*/
+
 }
