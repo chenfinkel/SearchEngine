@@ -12,7 +12,7 @@ public class Parse {
     private Indexer idxr;
     private String stopWordsPath;
     //HashMap contains the terms of the document, and the location
-    private HashMap<String, ArrayList<Integer>> docTerms;
+    private HashMap<String, Integer> docTerms;
 
 
     public Parse() {
@@ -45,6 +45,7 @@ public class Parse {
             currToken = list.get(i);
             if (i != list.size() -1)
                 nextToken = list.get(i+1);
+            currToken = cleanTerm(currToken);
             if(isANumber(currToken)) {
                 if (nextToken.equalsIgnoreCase("percent") || nextToken.equalsIgnoreCase("percentage")) {
                     newToken = currToken + "%";
@@ -131,8 +132,8 @@ public class Parse {
                 newToken = currToken;
             }
             if (!docTerms.containsKey(newToken))
-                docTerms.put(newToken, new ArrayList<Integer>());
-            docTerms.get(newToken).add(j);
+                docTerms.put(newToken, 1);
+            docTerms.put(newToken, docTerms.get(newToken) + 1);;
         }
         HashSet<String> stopWords = getStopWords();
         Iterator it = docTerms.keySet().iterator();
@@ -143,6 +144,26 @@ public class Parse {
             }
         }
        idxr.Index(docTerms, docID);
+    }
+
+    private String cleanTerm(String s) {
+        int counter = 0;
+        for(int i = 0; i < s.length(); i++) {
+            if (!Character.isLetterOrDigit(s.charAt(i)) && s.charAt(i)!='$')
+                counter++;
+            else
+                break;
+        }
+        s = s.substring(counter, s.length());
+        counter = 0;
+        for(int i = s.length()-1; i >= 0; i--) {
+            if (!Character.isLetterOrDigit(s.charAt(i)) && s.charAt(i)!='$')
+                counter++;
+            else
+                break;
+        }
+        s = s.substring(0, s.length()-counter);
+        return s;
     }
 
     private boolean isYear(String s) {
@@ -315,68 +336,6 @@ public class Parse {
         return Snum;
     }
 
-    private String parseThousandsWithCommas(String s) {
-        String ans = "";
-        if ((s.substring(s.length()-3,s.length())).equals("000"))
-            ans = s.substring(0,s.length()-4) + "K";
-        else if ((s.substring(s.length()-2,s.length())).equals("00"))
-            ans = s.substring(0,s.length()-2) + "K";
-        else if (s.charAt(s.length()-1) == '0')
-            ans = s.substring(0,s.length()-1) + "K";
-        else
-            ans = s + "K";
-        return ans;
-    }
-
-    private String parseMillionsWithCommas(String s) {
-        String ans = "";
-        if ((s.substring(s.length()-7,s.length())).equals("000.000"))
-            ans = s.substring(0,s.length()-8) + "M";
-        else if ((s.substring(s.length()-6,s.length())).equals("00.000"))
-            ans = s.substring(0,s.length()-7) + "M";
-        else if ((s.substring(s.length()-5,s.length())).equals("0.000"))
-            ans = s.substring(0,s.length()-6) + "M";
-        else if ((s.substring(s.length()-3,s.length())).equals("000"))
-            ans = s.substring(0,s.length()-4) + "M";
-        else if ((s.substring(s.length()-2,s.length())).equals("00"))
-            ans = s.substring(0,s.length()-4) + s.substring(s.length()-3,s.length()-2) + "M";
-        else if (s.charAt(s.length()-1) == '0')
-            ans = s.substring(0,s.length()-4) + s.substring(s.length()-3,s.length()-1) + "M";
-        else
-            ans = s.substring(0,s.length()-4) + s.substring(s.length()-3,s.length()) + "M";
-        return ans;
-    }
-
-    private String parseNumberByBase(String s, int base, String suffix) {
-        String num = "";
-        for (int i = 0; i < s.length(); i++)
-            if (Character.isDigit(s.charAt(i)))
-                num = num + s.charAt(i);
-        int counter = 0;
-        int digitsBeforeDot = num.length() - base;
-        for (int i = num.length()-1; i >= base; i--) {
-            if (num.charAt(i) == '0')
-                counter++;
-            else
-                break;
-        }
-        if (counter == base)
-            return num.substring(0, digitsBeforeDot) + suffix;
-        String ans = "";
-        try {
-            num = num.substring(0, num.length() - counter);
-            ans = num.substring(0, digitsBeforeDot) + "." + num.substring(digitsBeforeDot, num.length()) + suffix;
-        }catch (Exception e){
-            System.out.println("s: " + s);
-            System.out.println("Base: " + base);
-            System.out.println("Suffix: " + suffix);
-            System.out.println("Digits: "+ digitsBeforeDot);
-            System.out.println("Counter: " + counter);
-            e.printStackTrace();
-        }
-        return ans;
-    }
-
     /**
      * The method tokenizes the text and returns a list of the tokens.
      * @param text is the original text we get from the readFile
@@ -403,7 +362,7 @@ public class Parse {
         finalText = "";
         for(int i = 0; i < splitByDotSpace.length; i++)
             finalText = finalText + splitByDotSpace[i] + "~";
-        StringTokenizer st = new StringTokenizer(finalText, "~\n!; ()[]{}?\"");
+        StringTokenizer st = new StringTokenizer(finalText, "~:/*\n!;+&|' \\()[]{}?\"");
         ArrayList<String> list = new ArrayList<>();
         while (st.hasMoreTokens())
             list.add(st.nextToken());
