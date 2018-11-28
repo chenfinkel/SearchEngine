@@ -3,10 +3,7 @@ package sample;
 import javafx.util.Pair;
 
 import java.lang.management.GarbageCollectorMXBean;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 public class Indexer {
 
@@ -41,6 +38,8 @@ public class Indexer {
             }
         } else {
             //build posting
+            TreeMap<String, Term> sorted = new TreeMap<>();
+            sorted.putAll(terms);
             termsDocs = new HashMap<String, ArrayList<Pair<String, Integer>>>();
             terms = new HashMap<String, Term>();
         }

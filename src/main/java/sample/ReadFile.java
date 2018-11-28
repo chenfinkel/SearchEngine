@@ -32,12 +32,12 @@ public class ReadFile {
         File mainFolder = new File(path);
         File[] folders = mainFolder.listFiles();
         FileReader fr;
+        int docsParsed = 0;
         for (File folder : folders) {
             try {
                 File file = folder.listFiles()[0];
                 String fileBody = FileUtils.readFileToString(file);
                 String[] docs = StringUtils.substringsBetween(fileBody, "<DOC>", "</DOC>");
-                int docsParsed = 0;
                 for (int i = 0; i < docs.length; i++) {
                     if (docsParsed == 10000){
                         parser.ParseDoc("index", "");
@@ -49,14 +49,11 @@ public class ReadFile {
                     if (textsInDoc != null) {
                         for (int j = 0; j < textsInDoc.length; j++) {
                             String textToParse = textsInDoc[j];
-                            textToParse = textToParse.split("</TEXT>\n")[0];
                             parser.ParseDoc(textToParse, docID);
                             docsParsed++;
                         }
                     }
                 }
-                parser.ParseDoc("index", "");
-
             }catch (IOException e) { e.printStackTrace(); }
         }
     }
