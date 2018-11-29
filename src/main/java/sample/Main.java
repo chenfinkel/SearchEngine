@@ -23,12 +23,12 @@ public class Main /*extends Application*/ {
 
     public static void main(String[] args) {
         // *********** when we will have GUI the user will give the path of the corpus
-        ReadFile rf = new ReadFile("C:\\Users\\chenfi\\IdeaProjects\\corpus");
-        long StartTime = System.nanoTime();
+        ReadFile rf = new ReadFile("C:\\Users\\yarinab\\IdeaProjects\\corpus");
+        //long StartTime = System.nanoTime();
         rf.read();
         //launch(args);
-        long EndTime = System.nanoTime();
-        double totalTime = (EndTime - StartTime)/1000000.0;
-        System.out.println("Total time:  " + totalTime/60000.0 + " min");
+        //long EndTime = System.nanoTime();
+        //double totalTime = (EndTime - StartTime)/1000000.0;
+        //System.out.println("Total time:  " + totalTime/60000.0 + " min");
     }
 }

@@ -12,7 +12,7 @@ public class Parse {
     private Indexer idxr;
     private String stopWordsPath;
     //HashMap contains the terms of the document, and the location
-    private HashMap<String, Integer> docTerms;
+    private LinkedHashMap<String, Integer> docTerms;
 
 
     public Parse() {
@@ -31,10 +31,11 @@ public class Parse {
      */
 
     public void ParseDoc(String text, String docID) {
-        if(text.equals("index")) {
+        if(text.equals("index") || text.equals("done")) {
             idxr.Index(null, docID);
+            return;
         }
-        docTerms = new HashMap<>();
+        docTerms = new LinkedHashMap<>();
         ArrayList<String> list = tokenize(text);
         String currToken = "";
         String nextToken = "";
@@ -45,7 +46,6 @@ public class Parse {
             currToken = list.get(i);
             if (i != list.size() -1)
                 nextToken = list.get(i+1);
-            currToken = cleanTerm(currToken);
             if(isANumber(currToken)) {
                 if (nextToken.equalsIgnoreCase("percent") || nextToken.equalsIgnoreCase("percentage")) {
                     newToken = currToken + "%";
@@ -277,7 +277,7 @@ public class Parse {
             else
                 price = num+ " M Dollars";
         }else{
-            price = s + "Dollars";
+            price = s + " Dollars";
         }
         return price;
     }
@@ -362,10 +362,16 @@ public class Parse {
         finalText = "";
         for(int i = 0; i < splitByDotSpace.length; i++)
             finalText = finalText + splitByDotSpace[i] + "~";
-        StringTokenizer st = new StringTokenizer(finalText, "~:/*\n!;+&|' \\()[]{}?\"");
+        StringTokenizer st = new StringTokenizer(finalText, "~:/`*\n!;+&|' \\()[]{}?\"");
         ArrayList<String> list = new ArrayList<>();
-        while (st.hasMoreTokens())
-            list.add(st.nextToken());
+        while (st.hasMoreTokens()) {
+            String s = st.nextToken();
+            if (!s.equals("")) {
+                s = cleanTerm(s);
+                if (!s.equals(""))
+                    list.add(s);
+            }
+        }
         return list;
     }
 }

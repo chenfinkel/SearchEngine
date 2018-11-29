@@ -19,13 +19,14 @@ public class ReadFile {
 
     public ReadFile(String path) {
         this.path = path;
-        parser = new Parse("C:\\Users\\chenfi\\IdeaProjects\\stop_words.txt");
+        parser = new Parse("C:\\Users\\yarinab\\IdeaProjects\\stop_words.txt");
     }
 
     /**
      * Read all file and separate them into documents
      */
     public void read(){
+        long StartTime = System.nanoTime();
         String newPath = "", data = "";
         File mainFolder = new File(path);
         File[] folders = mainFolder.listFiles();
@@ -38,6 +39,9 @@ public class ReadFile {
                 String[] docs = StringUtils.substringsBetween(fileBody, "<DOC>", "</DOC>");
                 for (int i = 0; i < docs.length; i++) {
                     String docID = StringUtils.substringBetween(docs[i], "<DOCNO>", "</DOCNO>");
+                    String docID2 = StringUtils.substringBetween(docs[i], " ", " ");
+                    if (!docID2.equals(""))
+                        docID = docID2;
                     String[] textsInDoc = StringUtils.substringsBetween(docs[i], "<TEXT>", "</TEXT>");
                     if (textsInDoc != null) {
                         for (int j = 0; j < textsInDoc.length; j++) {
@@ -46,8 +50,16 @@ public class ReadFile {
                         }
                     }
                 }
-                parser.ParseDoc("index", "");
+                parser.ParseDoc("index", "index");
             }catch (IOException e) { e.printStackTrace(); }
         }
+        long EndParse = System.nanoTime();
+        double totalTime = (EndParse - StartTime)/1000000.0;
+        System.out.println("Parse time:  " + totalTime/60000.0 + " min");
+        StartTime = System.nanoTime();
+        parser.ParseDoc("done", "done");
+        long EndTime = System.nanoTime();
+        totalTime = (EndTime - StartTime)/1000000.0;
+        System.out.println("S time:  " + totalTime/60000.0 + " min");
     }
 }
