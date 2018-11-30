@@ -362,7 +362,15 @@ public class Parse {
         finalText = "";
         for(int i = 0; i < splitByDotSpace.length; i++)
             finalText = finalText + splitByDotSpace[i] + "~";
-        StringTokenizer st = new StringTokenizer(finalText, "~:/`*\n!;+&|' \\()[]{}?\"");
+        String[] splitBySpace = finalText.split("\\s+");
+        finalText = "";
+        for(int i = 0; i < splitBySpace.length; i++)
+            finalText = finalText + splitBySpace[i] + "~";
+        String[] splitByDashDash = finalText.split("--");
+        finalText = "";
+        for(int i = 0; i < splitByDashDash.length; i++)
+            finalText = finalText + splitByDashDash[i] + "~";
+        StringTokenizer st = new StringTokenizer(finalText, "~:/`*\n!;+&|'\\() []{}?\"");
         ArrayList<String> list = new ArrayList<>();
         while (st.hasMoreTokens()) {
             String s = st.nextToken();
