@@ -2,6 +2,7 @@ package sample;
 
 import javafx.util.Pair;
 import org.apache.commons.io.FileUtils;
+import sun.awt.Mutex;
 
 import java.io.*;
 import java.lang.management.GarbageCollectorMXBean;
@@ -9,7 +10,12 @@ import java.util.*;
 
 public class Indexer {
 
-    private int index = 0;
+    public static int index = 0;
+
+    public static Mutex m = new Mutex();
+
+    private int fileIndex;
+
     // Dictionary maps terms to their posting file
     private LinkedHashMap<Term, Posting> dictionary;
     //terms maps a term to it's object
@@ -22,6 +28,11 @@ public class Indexer {
         dictionary = new LinkedHashMap<Term, Posting>();
         terms = new LinkedHashMap<String, Term>();
         termsDocs = new LinkedHashMap<String, ArrayList<String>>();
+        m.lock();
+        index++;
+        fileIndex = index;
+        m.unlock();
+
     }
 
     //string- the term, int- df in - docid- docNo
@@ -37,9 +48,8 @@ public class Indexer {
                     insert(termString, docTermFreq, DocID);
                 }
             } else {
-                index++;
                 try {
-                    FileWriter fw = new FileWriter("C:\\Users\\yarinab\\IdeaProjects\\Posting" + index + ".txt");
+                    FileWriter fw = new FileWriter(fileIndex + ".txt");
                     BufferedWriter bw = new BufferedWriter(fw);
                     TreeMap<String, Term> sorted = new TreeMap<>();
                     sorted.putAll(terms);
@@ -59,12 +69,13 @@ public class Indexer {
                     }
                     termsDocs = new LinkedHashMap<String, ArrayList<String>>();
                     terms = new LinkedHashMap<String, Term>();
-                } catch (Exception e) { }
+                } catch (Exception e) { e.printStackTrace(); }
             }
         }
     }
     // CHECK UPPERCASE CODE
     private void insert(String termString, int docTermFreq, String DocID) {
+        if (termString.equals("")) return;
         if (Character.isUpperCase(termString.charAt(0))) {
             String lowerCase = termString.toLowerCase();
             if (terms.containsKey(lowerCase)) {
