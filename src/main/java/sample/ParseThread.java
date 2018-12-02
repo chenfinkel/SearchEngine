@@ -17,7 +17,7 @@ public class ParseThread extends Thread {
     }
 
     public ParseThread(File folder){
-        parser = new Parse("C:\\Users\\User\\Documents\\שנה ג\\אחזור\\מנוע\\stop_words.txt");
+        parser = new Parse("D:\\searchEngine\\stop_words.txt");
         this.folder = folder;
     }
 
