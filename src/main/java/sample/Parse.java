@@ -14,6 +14,8 @@ public class Parse {
     //HashMap contains the terms of the document, and the location
     private LinkedHashMap<String, Integer> docTerms;
 
+    private Stemmer.PorterStemmer stemmer;
+
 
     public Parse() {
         idxr = new Indexer();
@@ -30,7 +32,7 @@ public class Parse {
      * @param docID is the id of the document
      */
 
-    public void ParseDoc(String text, String docID) {
+    public void ParseDoc(String text, String docID, boolean stem) {
         if(text.equals("index") || text.equals("done")) {
             idxr.Index(null, docID);
             return;
@@ -53,6 +55,10 @@ public class Parse {
                 }
                 else if (nextToken.equalsIgnoreCase("kilometers") || nextToken.equals("km")){
                     newToken = currToken + " km";
+                    i++;
+                }
+                else if (nextToken.equalsIgnoreCase("kilograms") || nextToken.equals("kg")){
+                    newToken = currToken + " kg";
                     i++;
                 }
                 else if (nextToken.equalsIgnoreCase("Dollars")) {
@@ -128,7 +134,20 @@ public class Parse {
                     i++;
                     newToken = term;
                 }
-            } else {
+            }
+            else if(currToken.equalsIgnoreCase("between")){
+                if (i < list.size() -3){
+                    if (isANumber(newToken)) {
+                        if (list.get(i+2).equalsIgnoreCase("and")){
+                            if (isANumber(list.get(i+3))) {
+                                newToken = currToken + " " + newToken + " " + list.get(i+2) + " " + list.get(i+3);
+                                i = i+3;
+                            }
+                        }
+                    }
+                }
+            }
+            else {
                 newToken = currToken;
             }
             if (!docTerms.containsKey(newToken))
@@ -139,7 +158,7 @@ public class Parse {
         Iterator it = docTerms.keySet().iterator();
         while(it.hasNext()) {
             String term = (String)it.next();
-            if (stopWords.contains(term)) {
+            if (stopWords.contains(term.toLowerCase())) {
                 it.remove();
             }
         }

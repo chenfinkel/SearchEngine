@@ -35,11 +35,11 @@ public class ParseThread extends Thread {
                 if (textsInDoc != null) {
                     for (int j = 0; j < textsInDoc.length; j++) {
                         String textToParse = textsInDoc[j];
-                        parser.ParseDoc(textToParse, docID);
+                        parser.ParseDoc(textToParse, docID, true);
                     }
                 }
             }
-            parser.ParseDoc("index", "index");
+            parser.ParseDoc("index", "index", false);
         }catch (IOException e) { e.printStackTrace(); }
     }
 }
