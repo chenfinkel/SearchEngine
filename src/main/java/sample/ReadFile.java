@@ -47,7 +47,7 @@ public class ReadFile {
 
         long EndTime = System.nanoTime();
         double totalTime = (EndTime - StartTime)/1000000.0;
-        System.out.println("Index time:  " + totalTime/60000.0 + " min");
+        System.out.println("Parse time:  " + totalTime/60000.0 + " min");
         StartTime = System.nanoTime();
         Indexer indexer = new Indexer();
         indexer.Merge();

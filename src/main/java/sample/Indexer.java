@@ -18,7 +18,7 @@ public class Indexer {
 
     private int fileIndex;
 
-    private int TermsCount;
+    private int docIndex;
 
     // Dictionary maps terms to their posting file
     private LinkedHashMap<Term, Posting> dictionary;
@@ -35,12 +35,14 @@ public class Indexer {
         m.lock();
         index++;
         fileIndex = index;
+        docIndex = index;
         m.unlock();
 
     }
 
     //string- the term, int- df in - docid- docNo
-    public void Index(HashMap<String, Integer> docTerms, String DocID) {
+    public void Index(HashMap<String, Integer> docTerms, String DocID, String city) {
+        int maxTF = 0;
         if (DocID.equals("done")) {
             Merge();
         } else {
@@ -49,7 +51,17 @@ public class Indexer {
                 while (it.hasNext()) {
                     String termString = (String) it.next();
                     int docTermFreq = docTerms.get(termString);
+                    if (docTermFreq > maxTF)
+                        maxTF = docTermFreq;
                     insert(termString, docTermFreq, DocID);
+                    try {
+                        FileWriter fw = new FileWriter("D:\\searchEngine\\docs\\doc" + docIndex + ".txt", true);
+                        BufferedWriter bw = new BufferedWriter(fw);
+                        bw.write(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + city);
+                        bw.newLine();
+                        bw.flush();
+                        fw.close();
+                    }catch (Exception e) { e.printStackTrace(); }
                 }
             } else {
                 try {
@@ -69,7 +81,6 @@ public class Indexer {
                         postingEntry = postingEntry + System.lineSeparator();
                         bw.write(postingEntry);
                         bw.flush();
-                        //bw.close();
                     }
                     fw.close();
                     termsDocs = new LinkedHashMap<>();
@@ -122,9 +133,14 @@ public class Indexer {
                 folders = postings.listFiles();
                 size = folders.length;
             }
+            FileReader fr = new FileReader("D:\\searchEngine\\posting\\tmp" + index2 + ".txt");
+            BufferedReader br = new BufferedReader(fr);
+            int counter = 0;
+            while(br.readLine() != null)
+                counter++;
+            System.out.println(counter);
             splitLetters(index2);
-
-        }catch (Exception e) {}
+        }catch (Exception e) { e.printStackTrace();}
     }
 
 

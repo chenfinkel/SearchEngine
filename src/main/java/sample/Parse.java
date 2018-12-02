@@ -14,7 +14,7 @@ public class Parse {
     //HashMap contains the terms of the document, and the location
     private LinkedHashMap<String, Integer> docTerms;
 
-    private Stemmer.PorterStemmer stemmer;
+    private Stemmer stemmer;
 
 
     public Parse() {
@@ -32,9 +32,9 @@ public class Parse {
      * @param docID is the id of the document
      */
 
-    public void ParseDoc(String text, String docID, boolean stem) {
+    public void ParseDoc(String text, String docID, String city, boolean stem) {
         if(text.equals("index") || text.equals("done")) {
-            idxr.Index(null, docID);
+            idxr.Index(null, docID, city);
             return;
         }
         docTerms = new LinkedHashMap<>();
@@ -42,7 +42,6 @@ public class Parse {
         String currToken = "";
         String nextToken = "";
         String newToken = "";
-        Term t = null;
         for(int i = 0 ; i < list.size() ; i++) {
             int j = i;
             currToken = list.get(i);
@@ -149,6 +148,12 @@ public class Parse {
             }
             else {
                 newToken = currToken;
+                if (stem){
+                    stemmer = new Stemmer();
+                    stemmer.add(currToken.toCharArray(), currToken.length());
+                    stemmer.stem();
+                    newToken = stemmer.toString();
+                }
             }
             if (!docTerms.containsKey(newToken))
                 docTerms.put(newToken, 1);
@@ -162,7 +167,7 @@ public class Parse {
                 it.remove();
             }
         }
-       idxr.Index(docTerms, docID);
+       idxr.Index(docTerms, docID, city);
     }
 
     private String cleanTerm(String s) {
