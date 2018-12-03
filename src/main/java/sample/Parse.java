@@ -14,8 +14,6 @@ public class Parse {
     //HashMap contains the terms of the document, and the location
     private LinkedHashMap<String, Integer> docTerms;
 
-    private Stemmer stemmer;
-
 
     public Parse() {
         idxr = new Indexer();
@@ -32,9 +30,9 @@ public class Parse {
      * @param docID is the id of the document
      */
 
-    public void ParseDoc(String text, String docID, String city, boolean stem) {
+    public void ParseDoc(String text, String docID) {
         if(text.equals("index") || text.equals("done")) {
-            idxr.Index(null, docID, city);
+            idxr.Index(null, docID);
             return;
         }
         docTerms = new LinkedHashMap<>();
@@ -42,6 +40,7 @@ public class Parse {
         String currToken = "";
         String nextToken = "";
         String newToken = "";
+        Term t = null;
         for(int i = 0 ; i < list.size() ; i++) {
             int j = i;
             currToken = list.get(i);
@@ -54,10 +53,6 @@ public class Parse {
                 }
                 else if (nextToken.equalsIgnoreCase("kilometers") || nextToken.equals("km")){
                     newToken = currToken + " km";
-                    i++;
-                }
-                else if (nextToken.equalsIgnoreCase("kilograms") || nextToken.equals("kg")){
-                    newToken = currToken + " kg";
                     i++;
                 }
                 else if (nextToken.equalsIgnoreCase("Dollars")) {
@@ -133,27 +128,8 @@ public class Parse {
                     i++;
                     newToken = term;
                 }
-            }
-            else if(currToken.equalsIgnoreCase("between")){
-                if (i < list.size() -3){
-                    if (isANumber(newToken)) {
-                        if (list.get(i+2).equalsIgnoreCase("and")){
-                            if (isANumber(list.get(i+3))) {
-                                newToken = currToken + " " + newToken + " " + list.get(i+2) + " " + list.get(i+3);
-                                i = i+3;
-                            }
-                        }
-                    }
-                }
-            }
-            else {
+            } else {
                 newToken = currToken;
-                if (stem){
-                    stemmer = new Stemmer();
-                    stemmer.add(currToken.toCharArray(), currToken.length());
-                    stemmer.stem();
-                    newToken = stemmer.toString();
-                }
             }
             if (!docTerms.containsKey(newToken))
                 docTerms.put(newToken, 1);
@@ -163,11 +139,11 @@ public class Parse {
         Iterator it = docTerms.keySet().iterator();
         while(it.hasNext()) {
             String term = (String)it.next();
-            if (stopWords.contains(term.toLowerCase())) {
+            if (stopWords.contains(term)) {
                 it.remove();
             }
         }
-       idxr.Index(docTerms, docID, city);
+       idxr.Index(docTerms, docID);
     }
 
     private String cleanTerm(String s) {
