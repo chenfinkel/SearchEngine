@@ -44,6 +44,6 @@ public class ParseThread extends Thread {
                 }
             }
             parser.ParseDoc("index", "index", "",false);
-        }catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) { e.printStackTrace(); }
     }
 }

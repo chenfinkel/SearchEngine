@@ -43,7 +43,7 @@ public class ReadFile {
         exeServ.shutdown();
         try {
             exeServ.awaitTermination(30, TimeUnit.MINUTES);
-        }catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { e.printStackTrace(); }
 
         long EndTime = System.nanoTime();
         double totalTime = (EndTime - StartTime)/1000000.0;

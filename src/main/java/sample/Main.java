@@ -23,7 +23,7 @@ public class Main /*extends Application*/ {
 
     public static void main(String[] args) {
         // *********** when we will have GUI the user will give the path of the corpus
-        ReadFile rf = new ReadFile("D:\\searchEngine\\corpus");
+        ReadFile rf = new ReadFile("D:\\searchEngine\\corpus5");
        // long StartTime = System.nanoTime();
         rf.read();
         //launch(args);
