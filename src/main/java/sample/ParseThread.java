@@ -31,15 +31,23 @@ public class ParseThread extends Thread {
                 String docID2 = StringUtils.substringBetween(docID, " ", " ");
                 if (!docID2.equals(""))
                     docID = docID2;
+                String city = StringUtils.substringBetween(docs[i],"<F P=104>  ", "</F>");
+                if (city != null) {
+                    String[] cityWords = city.split("\\s+");
+                    if (cityWords.length > 1)
+                        city = cityWords[0].toUpperCase();
+                } else
+                    city = "";
+                //String city = "test";
                 String[] textsInDoc = StringUtils.substringsBetween(docs[i], "<TEXT>", "</TEXT>");
                 if (textsInDoc != null) {
                     for (int j = 0; j < textsInDoc.length; j++) {
                         String textToParse = textsInDoc[j];
-                        parser.ParseDoc(textToParse, docID, false);
+                        parser.ParseDoc(textToParse, docID, city, false);
                     }
                 }
             }
-            parser.ParseDoc("index", "index", false);
+            parser.ParseDoc("index", "index", "", false);
         }catch (IOException e) { e.printStackTrace(); }
     }
 }

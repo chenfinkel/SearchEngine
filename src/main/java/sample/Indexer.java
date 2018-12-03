@@ -25,11 +25,14 @@ public class Indexer {
     //termsDocs maps a term to the documents it appeared in
     private LinkedHashMap<String, ArrayList<String>> termsDocs;
 
+    private LinkedHashSet<String> docs;
 
-    public Indexer(){
+
+    public Indexer() {
         dictionary = new LinkedHashMap<>();
         terms = new LinkedHashMap<>();
         termsDocs = new LinkedHashMap<>();
+        docs = new LinkedHashSet<>();
         m.lock();
         index++;
         fileIndex = index;
@@ -38,45 +41,60 @@ public class Indexer {
     }
 
     //string- the term, int- df in - docid- docNo
-    public void Index(HashMap<String, Integer> docTerms, String DocID) {
-        if (DocID.equals("done")) {
-            Merge();
+    public void Index(HashMap<String, Integer> docTerms, String DocID, String city) {
+        if (docTerms != null) {
+            int maxTF = 0;
+            Iterator it = docTerms.keySet().iterator();
+            while (it.hasNext()) {
+                String termString = (String) it.next();
+                int docTermFreq = docTerms.get(termString);
+                if (docTermFreq > maxTF)
+                    maxTF = docTermFreq;
+                insert(termString, docTermFreq, DocID);
+            }
+            docs.add(DocID+"~" + maxTF + "~" + docTerms.size() + "~" + city);
         } else {
-            if (docTerms != null) {
-                Iterator it = docTerms.keySet().iterator();
-                while (it.hasNext()) {
-                    String termString = (String) it.next();
-                    int docTermFreq = docTerms.get(termString);
-                    insert(termString, docTermFreq, DocID);
-                }
-            } else {
-                try {
-                    FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\"+ fileIndex + ".txt");
-                    BufferedWriter bw = new BufferedWriter(fw);
-                    List<String> sorted = new ArrayList<>();
-                    sorted.addAll(terms.keySet());
-                    Collections.sort(sorted, new SortIgnoreCase());
-                    for (int i = 0; i < sorted.size(); i++){
-                        String key = sorted.get(i);
-                        String postingEntry = "";
-                        postingEntry = key + "~" + terms.get(key).docFreq + "#";
-                        ArrayList<String> freqs = new ArrayList<>();
-                        freqs.addAll(termsDocs.get(key));
-                        for (int j = 0; j < freqs.size(); j++) {
-                            postingEntry = postingEntry + "|" + freqs.get(j);
-                        }
-                        postingEntry = postingEntry + System.lineSeparator();
-                        bw.write(postingEntry);
-                        bw.flush();
-                        //bw.close();
+            try {
+                FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\" + fileIndex + ".txt");
+                BufferedWriter bw = new BufferedWriter(fw);
+                List<String> sorted = new ArrayList<>();
+                sorted.addAll(terms.keySet());
+                Collections.sort(sorted, new SortIgnoreCase());
+                for (int i = 0; i < sorted.size(); i++) {
+                    String key = sorted.get(i);
+                    String postingEntry = "";
+                    postingEntry = key + "~" + terms.get(key).docFreq + "#";
+                    ArrayList<String> freqs = new ArrayList<>();
+                    freqs.addAll(termsDocs.get(key));
+                    for (int j = 0; j < freqs.size(); j++) {
+                        postingEntry = postingEntry + "|" + freqs.get(j);
                     }
-                    fw.close();
-                    termsDocs = new LinkedHashMap<>();
-                    terms = new LinkedHashMap<>();
-                } catch (Exception e) { e.printStackTrace(); }
+                    postingEntry = postingEntry + System.lineSeparator();
+                    bw.write(postingEntry);
+                    bw.flush();
+                }
+                fw.close();
+                fw = new FileWriter("D:\\searchEngine\\docs\\file" + fileIndex + ".txt");
+                bw = new BufferedWriter(fw);
+                sorted = new ArrayList<>();
+                sorted.addAll(docs);
+                Collections.sort(sorted, new SortIgnoreCase());
+                for (int i = 0; i < sorted.size(); i++){
+                    String s = sorted.get(i);
+                    bw.write(s);
+                    bw.newLine();
+                    bw.flush();
+                }
+                fw.close();
+                termsDocs = new LinkedHashMap<>();
+                terms = new LinkedHashMap<>();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
+
     }
+
     // CHECK UPPERCASE CODE
     private void insert(String termString, int docTermFreq, String DocID) {
         if (termString.equals("")) return;
@@ -133,6 +151,10 @@ public class Indexer {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void mergeDirectory(String path) {
+
     }
 
 
