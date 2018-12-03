@@ -6,6 +6,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
+import org.decimal4j.util.DoubleRounder;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

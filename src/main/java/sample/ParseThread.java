@@ -31,9 +31,10 @@ public class ParseThread extends Thread {
                 docID = removeSpaces(docID);
                 String city = StringUtils.substringBetween(docs[i],"<F P=104>", "</F>");
                 city = removeSpaces(city);
-                String[] cityWords = city.split(" ");
+                city = city.toUpperCase();
+                String[] cityWords = city.split("\\s+");
                 if (cityWords.length > 1)
-                    city = cityWords[0].toUpperCase();
+                    city = cityWords[0];
                 String date = StringUtils.substringBetween(docs[i],"<DATE1>", " </DATE1>");
                 date = removeSpaces(date);
                 String language = StringUtils.substringBetween(docs[i],"<F P=105>", " </F>");
@@ -51,7 +52,7 @@ public class ParseThread extends Thread {
     }
 
     private String removeSpaces(String s){
-        if (s == null)
+        if (s == null || s.equals(""))
             return "X";
         String ans = "";
         int start = 0;

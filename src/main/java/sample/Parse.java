@@ -12,7 +12,7 @@ public class Parse {
     private Indexer idxr;
     private String stopWordsPath;
     //HashMap contains the terms of the document, and the location
-    private LinkedHashMap<String, Integer> docTerms;
+    private LinkedHashMap<String, LinkedHashSet<Integer>> docTerms;
     Stemmer stemmer;
 
 
@@ -139,8 +139,8 @@ public class Parse {
                 }
             }
             if (!docTerms.containsKey(newToken))
-                docTerms.put(newToken, 1);
-            docTerms.put(newToken, docTerms.get(newToken) + 1);;
+                docTerms.put(newToken, new LinkedHashSet<>());
+            docTerms.get(newToken).add(j);
         }
         HashSet<String> stopWords = getStopWords();
         Iterator it = docTerms.keySet().iterator();
