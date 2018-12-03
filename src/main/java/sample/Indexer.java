@@ -41,7 +41,7 @@ public class Indexer {
     }
 
     //string- the term, int- df in - docid- docNo
-    public void Index(HashMap<String, Integer> docTerms, String DocID, String city) {
+    public void Index(HashMap<String, Integer> docTerms, String DocID, String city, String date, String language) {
         if (docTerms != null) {
             int maxTF = 0;
             Iterator it = docTerms.keySet().iterator();
@@ -52,7 +52,7 @@ public class Indexer {
                     maxTF = docTermFreq;
                 insert(termString, docTermFreq, DocID);
             }
-            docs.add(DocID+"~" + maxTF + "~" + docTerms.size() + "~" + city);
+            docs.add(DocID+"~" + maxTF + "~" + docTerms.size() + "~" + date + "~" + city + "~" + language);
         } else {
             try {
                 FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\" + fileIndex + ".txt");
@@ -124,41 +124,102 @@ public class Indexer {
 
     //TAKES TOO MUCH TIME (OVER 5 MINUTES) AND WE DONT HANDLE DUPLICATES
     public void Merge() {
+        mergeDirectory("posting");
+        mergeDirectory("docs");
+    }
+
+    private void mergeDirectory(String dir) {
         try {
             int index2 = 0;
-            File postings = new File("D:\\searchEngine\\posting");
-            File[] folders = postings.listFiles();
-            int size = folders.length;
+            File folders = new File("D:\\searchEngine\\" + dir);
+            File[] files = folders.listFiles();
+            int size = files.length;
             while (size != 1) {
                 int i;
                 for (i = 0; i < size - 1; i = i + 2) {
                     index2++;
-                    File f1 = folders[i];
-                    File f2 = folders[i + 1];
-                    merge(f1, f2, index2);
+                    File f1 = files[i];
+                    File f2 = files[i + 1];
+                    if (dir.equals("posting"))
+                        mergePosting(f1, f2, index2);
+                    else
+                        mergeDocs(f1, f2, index2);
                 }
-                folders = postings.listFiles();
-                size = folders.length;
+                files = folders.listFiles();
+                size = files.length;
             }
-            FileReader fr = new FileReader("D:\\searchEngine\\posting\\tmp" + index2 + ".txt");
+            FileReader fr = new FileReader("D:\\searchEngine\\"+ dir + "\\tmp" + index2 + ".txt");
             BufferedReader br = new BufferedReader(fr);
             int counter = 0;
             while (br.readLine() != null)
                 counter++;
-            System.out.println(counter);
+            System.out.println(dir + ": " + counter);
             fr.close();
-            splitLetters(index2);
+            if (dir.equals("posting"))
+                splitLetters(index2);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void mergeDirectory(String path) {
-
+    private void mergeDocs(File left, File right, int TmpIndex){
+        try {
+            FileWriter fw = new FileWriter("D:\\searchEngine\\docs\\tmp" + TmpIndex + ".txt");
+            BufferedWriter bw = new BufferedWriter(fw);
+            FileReader frLeft = new FileReader(left.getPath());
+            BufferedReader brLeft = new BufferedReader(frLeft);
+            FileReader frRight = new FileReader(right.getPath());
+            BufferedReader brRight = new BufferedReader(frRight);
+            int leftIdx = 0;
+            int rightIdx = 0;
+            String newLine = "";
+            String leftLine = brLeft.readLine();
+            String rightLine = brRight.readLine();
+            while (leftLine != null && rightLine != null) {
+                if (leftLine.equals("") || rightLine.equals(""))
+                    continue;
+                String[] split1 = leftLine.split("~");
+                String[] split2 = rightLine.split("~");
+                String leftToken = split1[0];
+                String rightToken = split2[0];
+                if (leftToken.compareToIgnoreCase(rightToken) < 0) {
+                    bw.write(leftLine);
+                    bw.newLine();
+                    leftLine = brLeft.readLine();
+                } else {
+                    bw.write(rightLine);
+                    bw.newLine();
+                    rightLine = brRight.readLine();
+                }
+            }
+            if (leftLine != null) {
+                bw.write(leftLine);
+                bw.newLine();
+                while ((leftLine = brLeft.readLine()) != null) {
+                    bw.write(leftLine);
+                    bw.newLine();
+                }
+            }
+            if (rightLine != null) {
+                bw.write(rightLine);
+                bw.newLine();
+                while ((rightLine = brRight.readLine()) != null) {
+                    bw.write(rightLine);
+                    bw.newLine();
+                }
+            }
+            bw.flush();
+            fw.close();
+            frLeft.close();
+            frRight.close();
+            Files.deleteIfExists(left.toPath());
+            Files.deleteIfExists(right.toPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-
-    private void merge(File left, File right, int TmpIndex) {
+    private void mergePosting(File left, File right, int TmpIndex) {
         try {
             FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\tmp" + TmpIndex + ".txt");
             BufferedWriter bw = new BufferedWriter(fw);

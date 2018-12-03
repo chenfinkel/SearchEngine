@@ -31,9 +31,9 @@ public class Parse {
      * @param docID is the id of the document
      */
 
-    public void ParseDoc(String text, String docID, String city, boolean stem) {
+    public void ParseDoc(String text, String docID, String city, String date, String language, boolean stem) {
         if(text.equals("index") || text.equals("done")) {
-            idxr.Index(null, docID, city);
+            idxr.Index(null, docID, city, date, language);
             return;
         }
         docTerms = new LinkedHashMap<>();
@@ -150,7 +150,7 @@ public class Parse {
                 it.remove();
             }
         }
-       idxr.Index(docTerms, docID, city);
+       idxr.Index(docTerms, docID, city, date, language);
     }
 
     private String cleanTerm(String s) {
