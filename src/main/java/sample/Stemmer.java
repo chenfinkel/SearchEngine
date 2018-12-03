@@ -34,6 +34,7 @@ package sample;
 */
 
 import java.io.*;
+
 /**
  * Stemmer, implementing the Porter Stemming Algorithm
  *
@@ -42,15 +43,13 @@ import java.io.*;
  * by calling one of the various stem(something) methods.
  */
 
-public class Stemmer
-{
-    private char[] b;
+class Stemmer
+{  private char[] b;
     private int i,     /* offset into b */
             i_end, /* offset to end of stemmed word */
             j, k;
     private static final int INC = 50;
     /* unit of size whereby b is increased */
-
     public Stemmer()
     {  b = new char[INC];
         i = 0;

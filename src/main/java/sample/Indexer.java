@@ -7,6 +7,7 @@ import sun.awt.Mutex;
 import java.io.*;
 import java.lang.management.GarbageCollectorMXBean;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class Indexer {
@@ -52,16 +53,17 @@ public class Indexer {
                 try {
                     FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\"+ fileIndex + ".txt");
                     BufferedWriter bw = new BufferedWriter(fw);
-                    TreeMap<String, Term> sorted = new TreeMap<>();
-                    sorted.putAll(terms);
-                    for (Map.Entry<String, Term> entry : sorted.entrySet()) {
-                        String key = entry.getKey();
+                    List<String> sorted = new ArrayList<>();
+                    sorted.addAll(terms.keySet());
+                    Collections.sort(sorted, new SortIgnoreCase());
+                    for (int i = 0; i < sorted.size(); i++){
+                        String key = sorted.get(i);
                         String postingEntry = "";
-                        postingEntry = postingEntry + key + "~" + entry.getValue().docFreq + "#";
+                        postingEntry = key + "~" + terms.get(key).docFreq + "#";
                         ArrayList<String> freqs = new ArrayList<>();
                         freqs.addAll(termsDocs.get(key));
-                        for (int i = 0; i < freqs.size(); i++) {
-                            postingEntry = postingEntry + "|" + freqs.get(i);
+                        for (int j = 0; j < freqs.size(); j++) {
+                            postingEntry = postingEntry + "|" + freqs.get(j);
                         }
                         postingEntry = postingEntry + System.lineSeparator();
                         bw.write(postingEntry);
@@ -101,133 +103,145 @@ public class Indexer {
         termsDocs.get(termString).add(DocID + "*" + docTermFreq);
     }
 
+
     //TAKES TOO MUCH TIME (OVER 5 MINUTES) AND WE DONT HANDLE DUPLICATES
     public void Merge() {
         try {
-            int index = 0;
-            FileWriter fw;
-            BufferedWriter bw;
-            BufferedReader br;
-            FileReader fr;
+            int index2 = 0;
             File postings = new File("D:\\searchEngine\\posting");
             File[] folders = postings.listFiles();
             int size = folders.length;
             while (size != 1) {
                 int i;
-                for (i = 0; i < size - 1; i = i+2) {
-                    index++;
+                for (i = 0; i < size - 1; i = i + 2) {
+                    index2++;
                     File f1 = folders[i];
-                    File f2 = folders[i+1];
-                    fr = new FileReader(f1.getPath());
-                    br = new BufferedReader(fr);
-                    String line, file11 = "";
-                    while ((line= br.readLine()) != null) {
-                        file11 = file11 + line;
-                    }
-                    fr.close();
-                    fr = new FileReader(f2.getPath());
-                    br = new BufferedReader(fr);
-                    String file22 = "";
-                    while ((line= br.readLine()) != null) {
-                        file22 = file22 + line;
-                    }
-                    fr.close();
-                    String[] file1 = file11.split(System.lineSeparator());
-                    String[] file2 = file22.split(System.lineSeparator());
-                    //String[] file1 = FileUtils.readFileToString(f1).split(System.lineSeparator());
-                    //String[] file2 = FileUtils.readFileToString(f2).split(System.lineSeparator());
-                    try {
-                        Files.deleteIfExists(f1.toPath());
-                        Files.deleteIfExists(f2.toPath());
-                    } catch (Exception e) { e.printStackTrace();}
-                    String merged = merge(file1, file2);
-                    fw = new FileWriter("D:\\searchEngine\\posting\\tmp"+ index + ".txt");
-                    bw = new BufferedWriter(fw);
-                    bw.write(merged);
-                    bw.flush();
-                    fw.close();
-                }
-                if (i == size -1){
-                    File f1 = folders[i];
-                    File f2 = new File("D:\\searchEngine\\posting\\tmp"+ index + ".txt");
-                    fr = new FileReader(f1.getPath());
-                    br = new BufferedReader(fr);
-                    String line, file11 = "";
-                    while ((line= br.readLine()) != null) {
-                        file11 = file11 + line;
-                    }
-                    fr.close();
-                    fr = new FileReader(f2.getPath());
-                    br = new BufferedReader(fr);
-                    String file22 = "";
-                    while ((line= br.readLine()) != null) {
-                        file22 = file22 + line;
-                    }
-                    fr.close();
-                    String[] file1 = file11.split(System.lineSeparator());
-                    String[] file2 = file22.split(System.lineSeparator());
-                    //String[] file1 = FileUtils.readFileToString(f1).split(System.lineSeparator());
-                    //String[] file2 = FileUtils.readFileToString(f2).split(System.lineSeparator());
-                    try {
-                        Files.deleteIfExists(f1.toPath());
-                        Files.deleteIfExists(f2.toPath());
-                    } catch (Exception e) { e.printStackTrace();}
-                    String merged = merge(file1, file2);
-                    //index++;
-                    fw = new FileWriter("D:\\searchEngine\\posting\\tmp"+ index + ".txt");
-                    bw = new BufferedWriter(fw);
-                    bw.write(merged);
-                    bw.flush();
-                    fw.close();
+                    File f2 = folders[i + 1];
+                    merge(f1, f2, index2);
                 }
                 folders = postings.listFiles();
                 size = folders.length;
             }
-
-        }catch (Exception e) {}
+            FileReader fr = new FileReader("D:\\searchEngine\\posting\\tmp" + index2 + ".txt");
+            BufferedReader br = new BufferedReader(fr);
+            int counter = 0;
+            while (br.readLine() != null)
+                counter++;
+            System.out.println(counter);
+            fr.close();
+            splitLetters(index2);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
-    private String merge(String[] left, String[] right) {
-        String merged = "";
-        int leftIdx = 0;
-        int rightIdx = 0;
-        String newLine = "";
-        while (leftIdx < left.length && rightIdx < right.length){
-            String[] split1 = left[leftIdx].split("~");
-            String[] split2 = right[rightIdx].split("~");
-            String leftToken = split1[0];
-            String rightToken = split2[0];
-            if (leftToken.equalsIgnoreCase(rightToken)){
-                String[] details1 = split1[1].split("#");
-                String[] details2 = split2[1].split("#");
-                int tf = Integer.parseInt(details1[0])+ Integer.parseInt(details2[0]);
-                String newToken = rightToken;
-                if (Character.isLetter(leftToken.charAt(0))){
-                    if (rightToken.charAt(0) < leftToken.charAt(0))
-                        newToken = leftToken;
+    private void merge(File left, File right, int TmpIndex) {
+        try {
+            FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\tmp" + TmpIndex + ".txt");
+            BufferedWriter bw = new BufferedWriter(fw);
+            FileReader frLeft = new FileReader(left.getPath());
+            BufferedReader brLeft = new BufferedReader(frLeft);
+            FileReader frRight = new FileReader(right.getPath());
+            BufferedReader brRight = new BufferedReader(frRight);
+            int leftIdx = 0;
+            int rightIdx = 0;
+            String newLine = "";
+            String leftLine = brLeft.readLine();
+            String rightLine = brRight.readLine();
+            while (leftLine != null && rightLine != null) {
+                if (leftLine.equals("") || rightLine.equals(""))
+                    continue;
+                String[] split1 = leftLine.split("~");
+                String[] split2 = rightLine.split("~");
+                String leftToken = split1[0];
+                String rightToken = split2[0];
+                if (leftToken.equalsIgnoreCase(rightToken)) {
+                    String[] details1 = split1[1].split("#");
+                    String[] details2 = split2[1].split("#");
+                    int tf = Integer.parseInt(details1[0]) + Integer.parseInt(details2[0]);
+                    String newToken = rightToken;
+                    if (Character.isLetter(leftToken.charAt(0))) {
+                        if (rightToken.charAt(0) < leftToken.charAt(0))
+                            newToken = leftToken;
+                    }
+                    bw.write(newToken + "~" + tf + "#" + details1[1] + details2[1]);
+                    bw.newLine();
+                    leftLine = brLeft.readLine();
+                    rightLine = brRight.readLine();
+
+                } else if (leftToken.compareToIgnoreCase(rightToken) < 0) {
+                    bw.write(leftLine);
+                    bw.newLine();
+                    leftLine = brLeft.readLine();
+                } else {
+                    bw.write(rightLine);
+                    bw.newLine();
+                    rightLine = brRight.readLine();
                 }
-                merged = merged + newToken + "~" + tf + "#" + details1[1] + details2[1] + System.lineSeparator();
-                leftIdx++;
-                rightIdx++;
             }
-            else if (leftToken.compareTo(rightToken) < 0) {
-                merged = merged + left[leftIdx] + System.lineSeparator();
-                leftIdx++;
+            if (leftLine != null) {
+                bw.write(leftLine);
+                bw.newLine();
+                while ((leftLine = brLeft.readLine()) != null) {
+                    bw.write(leftLine);
+                    bw.newLine();
+                }
             }
-            else{
-                merged = merged + right[rightIdx] + System.lineSeparator();
-                rightIdx++;
+            if (rightLine != null) {
+                bw.write(rightLine);
+                bw.newLine();
+                while ((rightLine = brRight.readLine()) != null) {
+                    bw.write(rightLine);
+                    bw.newLine();
+                }
             }
+            bw.flush();
+            fw.close();
+            frLeft.close();
+            frRight.close();
+            Files.deleteIfExists(left.toPath());
+            Files.deleteIfExists(right.toPath());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        if (leftIdx < left.length) {
-            for (int i = leftIdx; i < left.length; i++)
-                merged = merged + left[i] + System.lineSeparator();
+    }
+
+    private void splitLetters(int pIndex) {
+        try {
+            FileReader fr = new FileReader("D:\\searchEngine\\posting\\tmp" + pIndex + ".txt");
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            char first = line.charAt(0);
+            while (line != null) {
+                char tmp = first;
+                String name = (first + "").toLowerCase();
+                FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\" + name + ".txt", true);
+                BufferedWriter bw = new BufferedWriter(fw);
+                while (first == tmp) {
+                    bw.write(line);
+                    bw.newLine();
+                    line = br.readLine();
+                    if (line == null)
+                        break;
+                    first = line.charAt(0);
+                }
+                bw.flush();
+                fw.close();
+            }
+            fr.close();
+            Files.deleteIfExists(Paths.get("D:\\searchEngine\\posting\\tmp" + pIndex + ".txt"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        if (rightIdx < right.length) {
-            for (int i = rightIdx; i < right.length; i++)
-                merged = merged + right[i] + System.lineSeparator();
+    }
+
+    public class SortIgnoreCase implements Comparator<Object> {
+        public int compare(Object o1, Object o2) {
+            String s1 = (String) o1;
+            String s2 = (String) o2;
+            return s1.toLowerCase().compareTo(s2.toLowerCase());
         }
-        return merged;
     }
 }

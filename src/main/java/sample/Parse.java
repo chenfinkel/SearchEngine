@@ -13,6 +13,7 @@ public class Parse {
     private String stopWordsPath;
     //HashMap contains the terms of the document, and the location
     private LinkedHashMap<String, Integer> docTerms;
+    Stemmer stemmer;
 
 
     public Parse() {
@@ -30,7 +31,7 @@ public class Parse {
      * @param docID is the id of the document
      */
 
-    public void ParseDoc(String text, String docID) {
+    public void ParseDoc(String text, String docID, boolean stem) {
         if(text.equals("index") || text.equals("done")) {
             idxr.Index(null, docID);
             return;
@@ -130,6 +131,12 @@ public class Parse {
                 }
             } else {
                 newToken = currToken;
+                if (stem){
+                    stemmer = new Stemmer();
+                    stemmer.add(currToken.toCharArray(), currToken.length());
+                    stemmer.stem();
+                    newToken = stemmer.toString();
+                }
             }
             if (!docTerms.containsKey(newToken))
                 docTerms.put(newToken, 1);
