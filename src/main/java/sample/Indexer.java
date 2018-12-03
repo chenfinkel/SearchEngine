@@ -173,13 +173,6 @@ public class Indexer {
                 files = folders.listFiles();
                 size = files.length;
             }
-            FileReader fr = new FileReader("D:\\searchEngine\\" + dir + "\\tmp" + index2 + ".txt");
-            BufferedReader br = new BufferedReader(fr);
-            int counter = 0;
-            while (br.readLine() != null)
-                counter++;
-            System.out.println(dir + ": " + counter);
-            fr.close();
             if (dir.equals("posting"))
                 splitLetters(index2);
         } catch (Exception e) {
