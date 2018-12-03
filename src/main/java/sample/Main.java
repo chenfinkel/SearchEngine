@@ -30,5 +30,6 @@ public class Main /*extends Application*/ {
        // long EndTime = System.nanoTime();
        // double totalTime = (EndTime - StartTime)/1000000.0;
        // System.out.println("Total time:  " + totalTime/60000.0 + " min");
+        //this is nothing
     }
 }
