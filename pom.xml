@@ -18,9 +18,19 @@
                 </configuration>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.fxml</include>
+                    <include>**/*.css</include>
+                </includes>
+            </resource>
+        </resources>
     </build>
 
     <dependencies>
+
         <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
         <dependency>
             <groupId>org.jsoup</groupId>
@@ -49,6 +59,5 @@
         </dependency>
 
     </dependencies>
-
 
 </project>

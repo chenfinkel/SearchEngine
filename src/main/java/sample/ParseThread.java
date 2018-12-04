@@ -12,12 +12,15 @@ public class ParseThread extends Thread {
 
     private File folder;
 
+    private boolean stem;
+
     public ParseThread(){
         parser = new Parse();
     }
 
-    public ParseThread(File folder){
-        parser = new Parse("D:\\searchEngine\\stop_words.txt");
+    public ParseThread(File folder, String corpusPath, String postPath, boolean stem){
+        parser = new Parse(corpusPath + "\\stop_words.txt");
+        this.stem = stem;
         this.folder = folder;
     }
 
@@ -43,11 +46,11 @@ public class ParseThread extends Thread {
                 if (textsInDoc != null) {
                     for (int j = 0; j < textsInDoc.length; j++) {
                         String textToParse = textsInDoc[j];
-                        parser.ParseDoc(textToParse, docID, city, date, language, false);
+                        parser.ParseDoc(textToParse, docID, city, date, language, stem);
                     }
                 }
             }
-            parser.ParseDoc("index", "index", "", "", "", false);
+            parser.ParseDoc("index", "index", "", "", "", stem);
         }catch (IOException e) { e.printStackTrace(); }
     }
 

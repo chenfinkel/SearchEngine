@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+
+
+<AnchorPane fx:controller="sample.View" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="338.0" prefWidth="512.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <TextField fx:id="Corpus" layoutX="36.0" layoutY="95.0" promptText="Corpus path" />
+      <TextField fx:id="Posting" layoutX="36.0" layoutY="127.0" promptText="Posting path" />
+      <Button fx:id="browseCorpus" layoutX="193.0" layoutY="95.0" onAction="#BrowseCorpus" mnemonicParsing="false" text="Browse"/>
+      <Button fx:id="browsePosting" layoutX="193.0" layoutY="127.0" onAction="#BrowsePosting" mnemonicParsing="false" text="Browse"/>
+      <Button fx:id="startBtn" layoutX="35.0" layoutY="190.0" onAction="#Start" mnemonicParsing="false" text="START" />
+      <ChoiceBox fx:id="languages" layoutX="328.0" layoutY="127.0" prefWidth="150.0" />
+      <CheckBox fx:id="stemming" layoutX="36.0" layoutY="162.0" mnemonicParsing="false" text="Stemming?" />
+      <Button fx:id="resetBtn" layoutX="36.0" layoutY="233.0" mnemonicParsing="false" text="RESET" />
+      <Button fx:id="showDict" layoutX="36.0" layoutY="282.0" mnemonicParsing="false" text="Show Dictionary" />
+      <Button fx:id="loadDict" layoutX="160.0" layoutY="282.0" mnemonicParsing="false" text="Load Dictionary" />
+      <Label layoutX="214.0" layoutY="30.0" prefHeight="37.0" prefWidth="90.0" text="SEARCH ENGINE" />
+      <Label layoutX="359.0" layoutY="99.0" prefHeight="17.0" prefWidth="109.0" text="Text Languages" />
+   </children>
+</AnchorPane>

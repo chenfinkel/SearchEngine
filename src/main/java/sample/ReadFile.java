@@ -1,6 +1,5 @@
 package sample;
 
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -15,6 +14,8 @@ public class ReadFile {
 
     //private Parse parser;
     private String path;
+    private String postPath;
+    private boolean stem;
     private ExecutorService exeServ;
     private String textToParse;
     private String docID;
@@ -24,10 +25,11 @@ public class ReadFile {
         path = "";
     }
 
-    public ReadFile(String path) {
+    public ReadFile(String path, String postPath, boolean stem) {
         this.path = path;
+        this.postPath = postPath;
+        this.stem = stem;
         exeServ = Executors.newFixedThreadPool(10);
-        //parser = new Parse("C:\\Users\\yarinab\\IdeaProjects\\stop_words.txt");
     }
 
     /**
@@ -38,7 +40,8 @@ public class ReadFile {
         File mainFolder = new File(path);
         File[] folders = mainFolder.listFiles();
         for (File folder : folders) {
-            exeServ.submit(new ParseThread(folder));
+            if(!folder.getName().equals("stop_words.txt"))
+                exeServ.submit(new ParseThread(folder, path, postPath, stem));
         }
         exeServ.shutdown();
         try {
@@ -50,7 +53,7 @@ public class ReadFile {
         System.out.println("Parse time:  " + totalTime/60000.0 + " min");
         StartTime = System.nanoTime();
         Indexer indexer = new Indexer();
-        indexer.Merge();
+        indexer.Merge(postPath, stem);
         EndTime = System.nanoTime();
         totalTime = (EndTime - StartTime)/1000000.0;
         System.out.println("Index time:  " + totalTime/60000.0 + " min");

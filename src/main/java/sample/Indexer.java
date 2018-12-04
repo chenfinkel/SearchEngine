@@ -33,7 +33,8 @@ public class Indexer {
     private LinkedHashSet<String> docs;
 
     public static LinkedHashMap<String, String> cities = new LinkedHashMap<>();
-    ;
+
+    private String postPath;
 
 
     public Indexer() {
@@ -45,7 +46,6 @@ public class Indexer {
         index++;
         fileIndex = index;
         m.unlock();
-
     }
 
     //string- the term, int- df in - docid- docNo
@@ -68,7 +68,7 @@ public class Indexer {
             docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + date + "~" + city + "~" + language);
         } else {
             try {
-                FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\" + fileIndex + ".txt");
+                FileWriter fw = new FileWriter("posting\\" + fileIndex + ".txt");
                 BufferedWriter bw = new BufferedWriter(fw);
                 List<String> sorted = new ArrayList<>();
                 sorted.addAll(terms.keySet());
@@ -87,7 +87,7 @@ public class Indexer {
                     bw.flush();
                 }
                 fw.close();
-                fw = new FileWriter("D:\\searchEngine\\docs\\file" + fileIndex + ".txt");
+                fw = new FileWriter("docs\\file" + fileIndex + ".txt");
                 bw = new BufferedWriter(fw);
                 sorted = new ArrayList<>();
                 sorted.addAll(docs);
@@ -145,7 +145,12 @@ public class Indexer {
 
 
     //TAKES TOO MUCH TIME (OVER 5 MINUTES) AND WE DONT HANDLE DUPLICATES
-    public void Merge() {
+    public void Merge(String path, boolean stem) {
+        if(stem) {
+            postPath = path + "\\stemmed";
+            new File(postPath).mkdirs();
+        }else
+            postPath = path;
         mergeDirectory("posting");
         mergeDirectory("docs");
         indexCities();
@@ -154,11 +159,13 @@ public class Indexer {
     private void mergeDirectory(String dir) {
         try {
             int index2 = 0;
-            File folders = new File("D:\\searchEngine\\" + dir);
+            File folders = new File(dir);
             File[] files = folders.listFiles();
             int size = files.length;
-            if (size == 1)
-                return;
+            if (size == 1 && dir.equals("docs")) {
+                FileUtils.copyFile(files[0], new File(postPath + "\\docs.txt"));
+                Files.deleteIfExists(files[0].toPath());
+            }
             while (size != 1) {
                 int i;
                 for (i = 0; i < size - 1; i = i + 2) {
@@ -167,12 +174,19 @@ public class Indexer {
                     File f2 = files[i + 1];
                     if (dir.equals("posting"))
                         mergePosting(f1, f2, index2);
-                    else
-                        mergeDocs(f1, f2, index2);
+                    else {
+                        if(size == 2) {
+                            mergeDocs(f1, f2, index2, true);
+                            break;
+                        }
+                        else
+                            mergeDocs(f1, f2, index2, false);
+                    }
                 }
                 files = folders.listFiles();
                 size = files.length;
             }
+
             if (dir.equals("posting"))
                 splitLetters(index2);
         } catch (Exception e) {
@@ -180,9 +194,13 @@ public class Indexer {
         }
     }
 
-    private void mergeDocs(File left, File right, int TmpIndex) {
+    private void mergeDocs(File left, File right, int TmpIndex, boolean flag) {
         try {
-            FileWriter fw = new FileWriter("D:\\searchEngine\\docs\\tmp" + TmpIndex + ".txt");
+            FileWriter fw;
+            if(flag)
+                fw = new FileWriter(postPath + "\\docs.txt");
+            else
+                fw = new FileWriter("docs\\tmp" + TmpIndex + ".txt");
             BufferedWriter bw = new BufferedWriter(fw);
             FileReader frLeft = new FileReader(left.getPath());
             BufferedReader brLeft = new BufferedReader(frLeft);
@@ -239,7 +257,7 @@ public class Indexer {
 
     private void mergePosting(File left, File right, int TmpIndex) {
         try {
-            FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\tmp" + TmpIndex + ".txt");
+            FileWriter fw = new FileWriter("posting\\tmp" + TmpIndex + ".txt");
             BufferedWriter bw = new BufferedWriter(fw);
             FileReader frLeft = new FileReader(left.getPath());
             BufferedReader brLeft = new BufferedReader(frLeft);
@@ -325,14 +343,18 @@ public class Indexer {
 
     private void splitLetters(int pIndex) {
         try {
-            FileReader fr = new FileReader("D:\\searchEngine\\posting\\tmp" + pIndex + ".txt");
+            FileReader fr;
+            if (pIndex != 0)
+                fr = new FileReader("posting\\tmp" + pIndex + ".txt");
+            else
+                fr = new FileReader("posting\\1.txt");
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
             char first = line.charAt(0);
             while (line != null) {
                 char tmp = first;
                 String name = (first + "").toLowerCase();
-                FileWriter fw = new FileWriter("D:\\searchEngine\\posting\\" + name + ".txt", true);
+                FileWriter fw = new FileWriter(postPath + "\\" + name + ".txt", true);
                 BufferedWriter bw = new BufferedWriter(fw);
                 while (first == tmp) {
                     bw.write(line);
@@ -346,7 +368,10 @@ public class Indexer {
                 fw.close();
             }
             fr.close();
-            Files.deleteIfExists(Paths.get("D:\\searchEngine\\posting\\tmp" + pIndex + ".txt"));
+            if (pIndex != 0)
+                Files.deleteIfExists(Paths.get("posting\\tmp" + pIndex + ".txt"));
+            else
+                Files.deleteIfExists(Paths.get("posting\\1.txt"));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -363,7 +388,7 @@ public class Indexer {
 
     private void indexCities(){
         try {
-            FileWriter fw = new FileWriter("D:\\searchEngine\\cities\\cities.txt", true);
+            FileWriter fw = new FileWriter(postPath + "\\cities.txt", true);
             BufferedWriter bw = new BufferedWriter(fw);
             Iterator it = cities.entrySet().iterator();
             while (it.hasNext()) {
