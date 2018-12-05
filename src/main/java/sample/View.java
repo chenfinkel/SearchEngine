@@ -58,7 +58,7 @@ public class View {
             double time = control.startSE(Corpus.getText(), Posting.getText(), stemming.isSelected());
             resetBtn.setDisable(false);
             LinkedHashSet<String> lang = control.getLanguage();
-            languages.setItems(FXCollections.observableArrayList(lang));
+            //languages.setItems(FXCollections.observableArrayList(lang));
             int terms = control.getNumOfTerms();
             int docs = control.getNumOfDocs();
             final Stage dialog = new Stage();

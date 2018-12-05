@@ -24,6 +24,10 @@ public class Indexer {
 
     public static Mutex m = new Mutex();
 
+    public static Mutex numOfDocsMutex = new Mutex();
+
+    public static Mutex numOfTermsMutex = new Mutex();
+
     private int fileIndex;
 
     public static int numOfDocs;
@@ -39,9 +43,9 @@ public class Indexer {
 
     public LinkedHashMap<String, Term> dictionary;
 
-    public static LinkedHashMap<String, String> cities = new LinkedHashMap<>();
+    private LinkedHashSet<String> cities;
 
-    public static LinkedHashSet<String> languages = new LinkedHashSet<>();
+    private LinkedHashSet<String> languages;
 
     private String postPath;
 
@@ -50,6 +54,8 @@ public class Indexer {
         terms = new LinkedHashMap<>();
         termsDocs = new LinkedHashMap<>();
         docs = new LinkedHashSet<>();
+        cities = new LinkedHashSet<>();
+        languages = new LinkedHashSet<>();
         m.lock();
         index++;
         fileIndex = index;
@@ -57,31 +63,28 @@ public class Indexer {
     }
 
     //string- the term, int- df in - docid- docNo
-    public void Index(HashMap<String, LinkedHashSet<Integer>> docTerms, String DocID, String city, String date, String language) {
+    public void Index(HashMap<String, Integer> docTerms, String DocID, String city, String date, String language) {
         if (docTerms != null) {
-            m.lock();
             if (!city.equals("X"))
-                cities.put(city, "");
+                cities.add(city);
             if (!language.equals("X"))
                 languages.add(language);
-            m.unlock();
             int maxTF = 0;
             Iterator it = docTerms.keySet().iterator();
             while (it.hasNext()) {
                 String termString = (String) it.next();
-                LinkedHashSet<Integer> locations = docTerms.get(termString);
-                int docTermFreq = locations.size();
+                int docTermFreq = docTerms.get(termString);
                 if (docTermFreq > maxTF)
                     maxTF = docTermFreq;
-                insert(termString, docTermFreq, DocID, locations);
+                insert(termString, docTermFreq, DocID);
             }
             docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + date + "~" + city + "~" + language);
-            m.lock();
+            numOfDocsMutex.lock();
             numOfDocs++;
-            m.unlock();
+            numOfDocsMutex.unlock();
         } else {
             try {
-                FileWriter fw = new FileWriter("posting\\" + fileIndex + ".txt");
+                FileWriter fw = new FileWriter("C:\\posting\\" + fileIndex + ".txt");
                 BufferedWriter bw = new BufferedWriter(fw);
                 List<String> sorted = new ArrayList<>();
                 sorted.addAll(terms.keySet());
@@ -97,23 +100,21 @@ public class Indexer {
                     }
                     postingEntry = postingEntry + System.lineSeparator();
                     bw.write(postingEntry);
-                    bw.flush();
                 }
+                bw.flush();
                 fw.close();
-                fw = new FileWriter("docs\\file" + fileIndex + ".txt");
-                bw = new BufferedWriter(fw);
-                sorted = new ArrayList<>();
-                sorted.addAll(docs);
-                Collections.sort(sorted, new SortIgnoreCase());
-                for (int i = 0; i < sorted.size(); i++) {
-                    String s = sorted.get(i);
-                    bw.write(s);
-                    bw.newLine();
-                    bw.flush();
-                }
-                fw.close();
+
+                writeTempFile("C:\\docs\\file" + fileIndex + ".txt", docs);
+
+                writeTempFile("C:\\cities\\file" + fileIndex + ".txt", cities);
+
+                writeTempFile("C:\\languages\\file" + fileIndex + ".txt", languages);
+
                 terms = new LinkedHashMap<>();
                 termsDocs = new LinkedHashMap<>();
+                docs = new LinkedHashSet<>();
+                cities = new LinkedHashSet<>();
+                languages = new LinkedHashSet<>();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -121,18 +122,28 @@ public class Indexer {
 
     }
 
+    private void writeTempFile(String path, Collection<String> c){
+        try {
+            FileWriter fw = new FileWriter(path);
+            BufferedWriter bw = new BufferedWriter(fw);
+            ArrayList<String> sorted = new ArrayList<>();
+            sorted.addAll(c);
+            Collections.sort(sorted, new SortIgnoreCase());
+            for (int i = 0; i < sorted.size(); i++) {
+                String s = sorted.get(i);
+                bw.write(s);
+                bw.newLine();
+            }
+            bw.flush();
+            fw.close();
+        }catch (Exception e) { e.printStackTrace(); }
+    }
+
+
     // CHECK UPPERCASE CODE
-    private void insert(String termString, int docTermFreq, String DocID, LinkedHashSet<Integer> locations) {
+    private void insert(String termString, int docTermFreq, String DocID) {
         if (termString.equals("")) return;
-        String line = DocID + "*" + docTermFreq + ":";
-        Iterator it = locations.iterator();
-        while (it.hasNext()) {
-            Integer loc = (Integer) it.next();
-            if (it.hasNext())
-                line = line + loc + ",";
-            else
-                line = line + loc;
-        }
+        String line = DocID + "*" + docTermFreq;
         if (Character.isUpperCase(termString.charAt(0))) {
             String lowerCase = termString.toLowerCase();
             if (terms.containsKey(lowerCase)) {
@@ -172,20 +183,22 @@ public class Indexer {
             postPath = path;
         mergeDirectory("posting");
         mergeDirectory("docs");
-        indexCities();
+        mergeDirectory("cities");
+        mergeDirectory("languages");
+        //indexCities();
     }
 
     private void mergeDirectory(String dir) {
         try {
             int index2 = 0;
-            File folders = new File(dir);
+            File folders = new File("C:\\" + dir);
             File[] files = folders.listFiles();
             int size = files.length;
-            if (size == 1 && dir.equals("docs")) {
-                FileUtils.copyFile(files[0], new File(postPath + "\\docs.txt"));
+            if (size == 1 && (dir.equals("docs") || dir.equals("language") || dir.equals("cities"))) {
+                FileUtils.copyFile(files[0], new File(postPath + "\\"+ dir+".txt"));
                 Files.deleteIfExists(files[0].toPath());
             }
-            while (size != 1) {
+            while (size > 1) {
                 int i;
                 for (i = 0; i < size - 1; i = i + 2) {
                     index2++;
@@ -195,11 +208,11 @@ public class Indexer {
                         mergePosting(f1, f2, index2);
                     else {
                         if(size == 2) {
-                            mergeDocs(f1, f2, index2, true);
+                            mergeFiles(f1, f2, index2, true, dir);
                             break;
                         }
                         else
-                            mergeDocs(f1, f2, index2, false);
+                            mergeFiles(f1, f2, index2, false, dir);
                     }
                 }
                 files = folders.listFiles();
@@ -209,9 +222,9 @@ public class Indexer {
             if (dir.equals("posting")) {
                 String path = "";
                 if (index2 != 0)
-                    path = "posting\\tmp" + index2 + ".txt";
+                    path = "C:\\posting\\tmp" + index2 + ".txt";
                 else
-                    path = "posting\\1.txt";
+                    path = "C:\\posting\\1.txt";
                 createDictionary(path);
                 splitLetters(path);
             }
@@ -220,13 +233,13 @@ public class Indexer {
         }
     }
 
-    private void mergeDocs(File left, File right, int TmpIndex, boolean flag) {
+    private void mergeFiles(File left, File right, int TmpIndex, boolean flag, String dir) {
         try {
             FileWriter fw;
             if(flag)
-                fw = new FileWriter(postPath + "\\docs.txt");
+                fw = new FileWriter(postPath + "\\" + dir +".txt");
             else
-                fw = new FileWriter("docs\\tmp" + TmpIndex + ".txt");
+                fw = new FileWriter("C:\\"+dir+"\\tmp" + TmpIndex + ".txt");
             BufferedWriter bw = new BufferedWriter(fw);
             FileReader frLeft = new FileReader(left.getPath());
             BufferedReader brLeft = new BufferedReader(frLeft);
@@ -240,10 +253,14 @@ public class Indexer {
             while (leftLine != null && rightLine != null) {
                 if (leftLine.equals("") || rightLine.equals(""))
                     continue;
-                String[] split1 = leftLine.split("~");
-                String[] split2 = rightLine.split("~");
-                String leftToken = split1[0];
-                String rightToken = split2[0];
+                String leftToken = leftLine;
+                String rightToken = rightLine;
+                if (dir.equals("docs")) {
+                    String[] split1 = leftLine.split("~");
+                    String[] split2 = rightLine.split("~");
+                    leftToken = split1[0];
+                    rightToken = split2[0];
+                }
                 if (leftToken.compareToIgnoreCase(rightToken) < 0) {
                     bw.write(leftLine);
                     bw.newLine();
@@ -283,7 +300,7 @@ public class Indexer {
 
     private void mergePosting(File left, File right, int TmpIndex) {
         try {
-            FileWriter fw = new FileWriter("posting\\tmp" + TmpIndex + ".txt");
+            FileWriter fw = new FileWriter("C:\\posting\\tmp" + TmpIndex + ".txt");
             BufferedWriter bw = new BufferedWriter(fw);
             FileReader frLeft = new FileReader(left.getPath());
             BufferedReader brLeft = new BufferedReader(frLeft);
@@ -330,33 +347,23 @@ public class Indexer {
                 }
                 bw.write(newLine);
                 bw.newLine();
-                if (cities.containsKey(newToken.toUpperCase()))
-                    cities.put(newToken.toUpperCase(), newLine);
             }
             if (leftLine != null) {
                 newToken = leftLine.split("~")[0];
-                if (cities.containsKey(newToken.toUpperCase()))
-                    cities.put(newToken.toUpperCase(), leftLine);
                 bw.write(leftLine);
                 bw.newLine();
                 while ((leftLine = brLeft.readLine()) != null) {
                     newToken = leftLine.split("~")[0];
-                    if (cities.containsKey(newToken.toUpperCase()))
-                        cities.put(newToken.toUpperCase(), leftLine);
                     bw.write(leftLine);
                     bw.newLine();
                 }
             }
             if (rightLine != null) {
                 newToken = rightLine.split("~")[0];
-                if (cities.containsKey(newToken.toUpperCase()))
-                    cities.put(newToken.toUpperCase(), rightLine);
                 bw.write(rightLine);
                 bw.newLine();
                 while ((rightLine = brRight.readLine()) != null) {
                     newToken = rightLine.split("~")[0];
-                    if (cities.containsKey(newToken.toUpperCase()))
-                        cities.put(newToken.toUpperCase(), rightLine);
                     bw.write(rightLine);
                     bw.newLine();
                 }
@@ -417,19 +424,13 @@ public class Indexer {
         try {
             FileWriter fw = new FileWriter(postPath + "\\cities.txt", true);
             BufferedWriter bw = new BufferedWriter(fw);
-            Iterator it = cities.entrySet().iterator();
+            Iterator it = cities.iterator();
             while (it.hasNext()) {
-                Map.Entry<String, String> entry = (Map.Entry<String, String>) it.next();
-                String details = getDetails(entry.getKey());
-                String posting = entry.getValue();
-                String[] docs = posting.split("!");
-                for (int i = 1; i < docs.length; i++) {
-                    details = details + "!" + docs[i];
-                }
+                String details = getDetails((String)it.next());
                 bw.write(details);
                 bw.newLine();
-                bw.flush();
             }
+            bw.flush();
             fw.close();
         }catch (Exception e) { e.printStackTrace(); }
     }
@@ -525,9 +526,9 @@ public class Indexer {
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
             while (line != null){
-                m.lock();
+                numOfTermsMutex.lock();
                 numOfTerms++;
-                m.unlock();
+                numOfTermsMutex.unlock();
                 String[] split = line.split("~");
                 String term = split[0];
                 Term t = new Term(term);

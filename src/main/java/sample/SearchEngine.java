@@ -17,9 +17,10 @@ public class SearchEngine {
     public LinkedHashMap<String, Term> dictionary;
 
     public SearchEngine() {
-        new File("posting").mkdirs();
-        new File("docs").mkdirs();
-        new File("cities").mkdirs();
+        new File("C:\\posting").mkdirs();
+        new File("C:\\docs").mkdirs();
+        new File("C:\\cities").mkdirs();
+        new File("C:\\languages").mkdirs();
     }
 
     public void setProps(String cp, String pp, boolean stem) {

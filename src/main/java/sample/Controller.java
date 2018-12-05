@@ -47,6 +47,10 @@ public class Controller {
     public void Reset() {
         if(se.getPostingPath() != null)
             se.Reset();
+        Indexer.numOfTerms = 0;
+        Indexer.numOfDocs = 0;
+        Indexer.index = 0;
+        se = new SearchEngine();
     }
 
 }
