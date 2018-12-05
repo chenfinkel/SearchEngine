@@ -1,22 +1,25 @@
 package sample;
 
-import javafx.util.Pair;
+
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.decimal4j.util.DoubleRounder;
+import org.json.JSONException;
+import org.json.JSONObject;
 import sun.awt.Mutex;
 
 import java.io.*;
-import java.lang.management.GarbageCollectorMXBean;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.spec.ECField;
-import java.text.DecimalFormat;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Indexer {
 
@@ -106,7 +109,7 @@ public class Indexer {
 
                 writeTempFile("C:\\docs\\file" + fileIndex + ".txt", docs);
 
-                writeTempFile("C:\\cities\\file" + fileIndex + ".txt", cities);
+                writeTempFile("C:\\city\\file" + fileIndex + ".txt", cities);
 
                 writeTempFile("C:\\languages\\file" + fileIndex + ".txt", languages);
 
@@ -123,7 +126,7 @@ public class Indexer {
 
     }
 
-    private void writeTempFile(String path, Collection<String> c){
+    private void writeTempFile(String path, Collection<String> c) {
         try {
             FileWriter fw = new FileWriter(path);
             BufferedWriter bw = new BufferedWriter(fw);
@@ -137,7 +140,9 @@ public class Indexer {
             }
             bw.flush();
             fw.close();
-        }catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -177,16 +182,20 @@ public class Indexer {
 
     //TAKES TOO MUCH TIME (OVER 5 MINUTES) AND WE DONT HANDLE DUPLICATES
     public void Merge(String path, boolean stem) {
-        if(stem) {
+        if (stem) {
             postPath = path + "\\stemmed";
             new File(postPath).mkdirs();
-        }else
+        } else
             postPath = path;
+        ExecutorService exeServ = Executors.newFixedThreadPool(3);
+        exeServ.submit(new mergeThread("docs", postPath));
+        exeServ.submit(new mergeThread("city", postPath));
+        exeServ.submit(new mergeThread("languages", postPath));
+        exeServ.shutdown();
+        try {
+            exeServ.awaitTermination(30, TimeUnit.MINUTES);
+        } catch (Exception e) { e.printStackTrace(); }
         mergeDirectory("posting");
-        mergeDirectory("docs");
-        mergeDirectory("cities");
-        mergeDirectory("languages");
-        //indexCities();
     }
 
     private void mergeDirectory(String dir) {
@@ -195,8 +204,8 @@ public class Indexer {
             File folders = new File("C:\\" + dir);
             File[] files = folders.listFiles();
             int size = files.length;
-            if (size == 1 && (dir.equals("docs") || dir.equals("language") || dir.equals("cities"))) {
-                FileUtils.copyFile(files[0], new File(postPath + "\\"+ dir+".txt"));
+            if (size == 1 && (dir.equals("docs") || dir.equals("language") || dir.equals("city"))) {
+                FileUtils.copyFile(files[0], new File(postPath + "\\" + dir + ".txt"));
                 Files.deleteIfExists(files[0].toPath());
             }
             while (size > 1) {
@@ -208,11 +217,13 @@ public class Indexer {
                     if (dir.equals("posting"))
                         mergePosting(f1, f2, index2);
                     else {
-                        if(size == 2) {
-                            mergeFiles(f1, f2, index2, true, dir);
+                        if (size == 2) {
+                            if(dir.equals("city"))
+                                mergeCities(f1, f2);
+                            else
+                                mergeFiles(f1, f2, index2, true, dir);
                             break;
-                        }
-                        else
+                        } else
                             mergeFiles(f1, f2, index2, false, dir);
                     }
                 }
@@ -237,10 +248,10 @@ public class Indexer {
     private void mergeFiles(File left, File right, int TmpIndex, boolean flag, String dir) {
         try {
             FileWriter fw;
-            if(flag)
-                fw = new FileWriter(postPath + "\\" + dir +".txt");
+            if (flag)
+                fw = new FileWriter(postPath + "\\" + dir + ".txt");
             else
-                fw = new FileWriter("C:\\"+dir+"\\tmp" + TmpIndex + ".txt");
+                fw = new FileWriter("C:\\" + dir + "\\tmp" + TmpIndex + ".txt");
             BufferedWriter bw = new BufferedWriter(fw);
             FileReader frLeft = new FileReader(left.getPath());
             BufferedReader brLeft = new BufferedReader(frLeft);
@@ -262,7 +273,12 @@ public class Indexer {
                     leftToken = split1[0];
                     rightToken = split2[0];
                 }
-                if (leftToken.compareToIgnoreCase(rightToken) < 0) {
+                if (leftToken.equalsIgnoreCase(rightToken)) {
+                    bw.write(leftLine);
+                    bw.newLine();
+                    leftLine = brLeft.readLine();
+                    rightLine = brRight.readLine();
+                } else if (leftToken.compareToIgnoreCase(rightToken) < 0) {
                     bw.write(leftLine);
                     bw.newLine();
                     leftLine = brLeft.readLine();
@@ -285,6 +301,71 @@ public class Indexer {
                 bw.newLine();
                 while ((rightLine = brRight.readLine()) != null) {
                     bw.write(rightLine);
+                    bw.newLine();
+                }
+            }
+            bw.flush();
+            fw.close();
+            frLeft.close();
+            frRight.close();
+            Files.deleteIfExists(left.toPath());
+            Files.deleteIfExists(right.toPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void mergeCities(File left, File right) {
+        try {
+            FileWriter fw = new FileWriter(postPath + "\\cities.txt");
+            BufferedWriter bw = new BufferedWriter(fw);
+            FileReader frLeft = new FileReader(left.getPath());
+            BufferedReader brLeft = new BufferedReader(frLeft);
+            FileReader frRight = new FileReader(right.getPath());
+            BufferedReader brRight = new BufferedReader(frRight);
+            int leftIdx = 0;
+            int rightIdx = 0;
+            String newLine = "";
+            String leftLine = brLeft.readLine();
+            String rightLine = brRight.readLine();
+            while (leftLine != null && rightLine != null) {
+                if (leftLine.equals("") || rightLine.equals(""))
+                    continue;
+                if (leftLine.equalsIgnoreCase(rightLine)) {
+                    newLine = getDetails(leftLine);
+                    bw.write(newLine);
+                    bw.newLine();
+                    leftLine = brLeft.readLine();
+                    rightLine = brRight.readLine();
+                } else if (leftLine.compareToIgnoreCase(rightLine) < 0) {
+                    newLine = getDetails(leftLine);
+                    bw.write(newLine);
+                    bw.newLine();
+                    leftLine = brLeft.readLine();
+                } else {
+                    newLine = getDetails(rightLine);
+                    bw.write(newLine);
+                    bw.newLine();
+                    rightLine = brRight.readLine();
+                }
+            }
+            if (leftLine != null) {
+                newLine = getDetails(leftLine);
+                bw.write(newLine);
+                bw.newLine();
+                while ((leftLine = brLeft.readLine()) != null) {
+                    newLine = getDetails(leftLine);
+                    bw.write(newLine);
+                    bw.newLine();
+                }
+            }
+            if (rightLine != null) {
+                newLine = getDetails(rightLine);
+                bw.write(newLine);
+                bw.newLine();
+                while ((rightLine = brRight.readLine()) != null) {
+                    newLine = getDetails(rightLine);
+                    bw.write(newLine);
                     bw.newLine();
                 }
             }
@@ -336,35 +417,28 @@ public class Indexer {
                     newLine = newToken + "~" + tf + "~" + DF + "#" + details1[1] + details2[1];
                     leftLine = brLeft.readLine();
                     rightLine = brRight.readLine();
-
                 } else if (leftToken.compareToIgnoreCase(rightToken) < 0) {
                     newLine = leftLine;
-                    newToken = leftToken;
                     leftLine = brLeft.readLine();
                 } else {
                     newLine = rightLine;
-                    newToken = rightToken;
                     rightLine = brRight.readLine();
                 }
                 bw.write(newLine);
                 bw.newLine();
             }
             if (leftLine != null) {
-                newToken = leftLine.split("~")[0];
                 bw.write(leftLine);
                 bw.newLine();
                 while ((leftLine = brLeft.readLine()) != null) {
-                    newToken = leftLine.split("~")[0];
                     bw.write(leftLine);
                     bw.newLine();
                 }
             }
             if (rightLine != null) {
-                newToken = rightLine.split("~")[0];
                 bw.write(rightLine);
                 bw.newLine();
                 while ((rightLine = brRight.readLine()) != null) {
-                    newToken = rightLine.split("~")[0];
                     bw.write(rightLine);
                     bw.newLine();
                 }
@@ -421,54 +495,26 @@ public class Indexer {
         }
     }
 
-    private void indexCities(){
-        try {
-            FileWriter fw = new FileWriter(postPath + "\\cities.txt", true);
-            BufferedWriter bw = new BufferedWriter(fw);
-            Iterator it = cities.iterator();
-            while (it.hasNext()) {
-                String details = getDetails((String)it.next());
-                bw.write(details);
-                bw.newLine();
-            }
-            bw.flush();
-            fw.close();
-        }catch (Exception e) { e.printStackTrace(); }
-    }
-
     private String getDetails(String city) {
         try {
-            URL url = null;
-            String ans = "";
-            url = new URL(" http://getcitydetails.geobytes.com/GetCityDetails?fqcn=" + city);
+            URL url = new URL("http://getcitydetails.geobytes.com/GetCityDetails?fqcn=" + city);
             if (url != null) {
 
-                URLConnection urlConnection = url.openConnection();
-                InputStream inputStream = urlConnection.getInputStream();
-                BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+                String page = IOUtils.toString(url.openConnection().getInputStream());
 
-                String line = "", country = "", population = "", currency = "";
-
-                while ((line = br.readLine()) != null) {
-                    String[] tmp = line.split("\"");
-                    line = "";
-                    for (String s : tmp)
-                        line = line + s;
-
-                    if (line.contains("geobytescurrencycode"))
-                        currency = getValue(line, "geobytescurrencycode");
-
-                    if (line.contains("geobytespopulation")) {
-                        population = getValue(line, "geobytespopulation");
-                        if (!population.equals("X"))
-                            population = getNumber(population);
-                    }
-
-                    if (line.contains("geobytescountry"))
-                        country = getValue(line, "geobytescountry");
-                }
-                ans = city + "," + country + "," + population + "," + currency;
-                return ans;
+                String currency = StringUtils.substringBetween(page, '"'+"geobytescurrencycode"+'"'+":"+'"', '"'+",");
+                if (currency == null || currency.equals(""))
+                    currency = "X";
+                String pop = StringUtils.substringBetween(page, '"'+"geobytespopulation"+'"'+":"+'"', '"'+",");
+                String population;
+                if (pop == null || pop.equals(""))
+                    population = "X";
+                else
+                    population = getNumber(pop);
+                String country = StringUtils.substringBetween(page, '"'+"geobytescountry"+'"'+":"+'"', '"'+",");
+                if (country == null || country.equals(""))
+                    country = "X";
+                return (city + "," + country + "," + population + "," + currency);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -476,43 +522,28 @@ public class Indexer {
         return "";
     }
 
-    private String getValue(String line, String detail) {
-        String[] splitedLine = line.split(",");
-        String s = "";
-        for (int i = 0; i < splitedLine.length; i++) {
-            if (splitedLine[i].contains(detail)) {
-                s = splitedLine[i];
-                break;
-            }
-        }
-        String[] tmp = s.split(":");
-        if (tmp.length > 1)
-            return tmp[1];
-        return "X";
-    }
-
-    private String getNumber(String s){
+    private String getNumber(String s) {
         double num = Double.parseDouble(s);
         String Snum = "";
-        if (num >= 1000000000){
-            num = num/1000000000;
+        if (num >= 1000000000) {
+            num = num / 1000000000;
             num = DoubleRounder.round(num, 2);
-            if (num == (int)num)
-                Snum = (int)num + "B";
+            if (num == (int) num)
+                Snum = (int) num + "B";
             else
                 Snum = num + "B";
-        } else if(num >= 1000000){
-            num = num/1000000;
+        } else if (num >= 1000000) {
+            num = num / 1000000;
             num = DoubleRounder.round(num, 2);
-            if (num == (int)num)
-                Snum = (int)num + "M";
+            if (num == (int) num)
+                Snum = (int) num + "M";
             else
                 Snum = num + "M";
-        } else if (num >= 1000){
-            num = num/1000;
+        } else if (num >= 1000) {
+            num = num / 1000;
             num = DoubleRounder.round(num, 2);
-            if (num == (int)num)
-                Snum = (int)num + "K";
+            if (num == (int) num)
+                Snum = (int) num + "K";
             else
                 Snum = num + "K";
         } else
@@ -520,13 +551,13 @@ public class Indexer {
         return Snum;
     }
 
-    private void createDictionary(String path){
+    private void createDictionary(String path) {
         try {
             dictionary = new LinkedHashMap<>();
             FileReader fr = new FileReader(path);
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
-            while (line != null){
+            while (line != null) {
                 numOfTermsMutex.lock();
                 numOfTerms++;
                 numOfTermsMutex.unlock();
@@ -546,7 +577,9 @@ public class Indexer {
             oos.writeObject(dictionary);
             oos.flush();
             fos.close();
-        }catch(Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

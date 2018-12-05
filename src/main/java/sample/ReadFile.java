@@ -20,8 +20,6 @@ public class ReadFile {
     private String postPath;
     private boolean stem;
     private ExecutorService exeServ;
-    private String textToParse;
-    private String docID;
     public LinkedHashSet<String> language;
     public int numOfTerms;
     public int numOfDocs;

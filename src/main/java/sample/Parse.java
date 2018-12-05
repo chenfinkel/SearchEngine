@@ -147,7 +147,7 @@ public class Parse {
         Iterator it = docTerms.keySet().iterator();
         while(it.hasNext()) {
             String term = (String)it.next();
-            if (stopWords.contains(term)) {
+            if (stopWords.contains(term.toLowerCase())) {
                 it.remove();
             }
         }

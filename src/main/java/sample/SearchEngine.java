@@ -19,7 +19,7 @@ public class SearchEngine {
     public SearchEngine() {
         new File("C:\\posting").mkdirs();
         new File("C:\\docs").mkdirs();
-        new File("C:\\cities").mkdirs();
+        new File("C:\\city").mkdirs();
         new File("C:\\languages").mkdirs();
     }
 

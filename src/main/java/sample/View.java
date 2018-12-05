@@ -70,6 +70,7 @@ public class View {
             Scene dialogScene = new Scene(dialogVbox, 300, 300);
             dialog.setScene(dialogScene);
             dialog.show();
+            startBtn.setDisable(true);
 
         } else {
             Alert a = new Alert(Alert.AlertType.INFORMATION);
@@ -96,6 +97,7 @@ public class View {
 
     public void Reset() {
         control.Reset();
+        startBtn.setDisable(false);
     }
 
     public void showDict() {
