@@ -8,6 +8,7 @@ import java.io.IOException;
 
 public class ParseThread extends Thread {
 
+    //parser
     private Parse parser;
 
     private File folder;
