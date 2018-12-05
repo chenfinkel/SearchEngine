@@ -3,6 +3,9 @@ package sample;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +22,9 @@ public class ReadFile {
     private ExecutorService exeServ;
     private String textToParse;
     private String docID;
+    public LinkedHashSet<String> language;
+    public int numOfTerms;
+    public int numOfDocs;
 
 
     public ReadFile(){
@@ -35,11 +41,10 @@ public class ReadFile {
     /**
      * Read all file and separate them into documents
      */
-    public void read(){
-        long StartTime = System.nanoTime();
+    public LinkedHashMap<String, Term> read(){
         File mainFolder = new File(path);
         File[] folders = mainFolder.listFiles();
-        for (File folder : folders) {
+            for (File folder : folders) {
             if(!folder.getName().equals("stop_words.txt"))
                 exeServ.submit(new ParseThread(folder, path, postPath, stem));
         }
@@ -48,15 +53,12 @@ public class ReadFile {
             exeServ.awaitTermination(30, TimeUnit.MINUTES);
         } catch (Exception e) { e.printStackTrace(); }
 
-        long EndTime = System.nanoTime();
-        double totalTime = (EndTime - StartTime)/1000000.0;
-        System.out.println("Parse time:  " + totalTime/60000.0 + " min");
-        StartTime = System.nanoTime();
         Indexer indexer = new Indexer();
         indexer.Merge(postPath, stem);
-        EndTime = System.nanoTime();
-        totalTime = (EndTime - StartTime)/1000000.0;
-        System.out.println("Index time:  " + totalTime/60000.0 + " min");
+        language = Indexer.languages;
+        numOfDocs = Indexer.numOfDocs.get();
+        numOfTerms = Indexer.numOfTerms.get();
+        return indexer.dictionary;
 
     }
 

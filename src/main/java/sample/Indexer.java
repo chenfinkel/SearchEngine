@@ -12,8 +12,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.spec.ECField;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Indexer {
 
@@ -23,22 +26,27 @@ public class Indexer {
 
     private int fileIndex;
 
-    // Dictionary maps terms to their posting file
-    private LinkedHashMap<Term, Posting> dictionary;
-    //terms maps a term to it's object
-    private LinkedHashMap<String, Term> terms;
+    public static AtomicInteger numOfDocs;
+
+    public static AtomicInteger numOfTerms;
+
     //termsDocs maps a term to the documents it appeared in
     private LinkedHashMap<String, ArrayList<String>> termsDocs;
 
+    private LinkedHashMap<String, Term> terms;
+
     private LinkedHashSet<String> docs;
 
+    public LinkedHashMap<String, Term> dictionary;
+
     public static LinkedHashMap<String, String> cities = new LinkedHashMap<>();
+
+    public static LinkedHashSet<String> languages = new LinkedHashSet<>();
 
     private String postPath;
 
 
     public Indexer() {
-        dictionary = new LinkedHashMap<>();
         terms = new LinkedHashMap<>();
         termsDocs = new LinkedHashMap<>();
         docs = new LinkedHashSet<>();
@@ -54,6 +62,8 @@ public class Indexer {
             m.lock();
             if (!city.equals("X"))
                 cities.put(city, "");
+            if (!language.equals("X"))
+                languages.add(language);
             m.unlock();
             int maxTF = 0;
             Iterator it = docTerms.keySet().iterator();
@@ -66,6 +76,7 @@ public class Indexer {
                 insert(termString, docTermFreq, DocID, locations);
             }
             docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + date + "~" + city + "~" + language);
+            numOfDocs.incrementAndGet();
         } else {
             try {
                 FileWriter fw = new FileWriter("posting\\" + fileIndex + ".txt");
@@ -76,7 +87,7 @@ public class Indexer {
                 for (int i = 0; i < sorted.size(); i++) {
                     String key = sorted.get(i);
                     String postingEntry = "";
-                    postingEntry = key + "~" + terms.get(key).docFreq + "#";
+                    postingEntry = key + "~" + terms.get(key).termFreq + "~" + terms.get(key).docFreq + "#";
                     ArrayList<String> freqs = new ArrayList<>();
                     freqs.addAll(termsDocs.get(key));
                     for (int j = 0; j < freqs.size(); j++) {
@@ -99,8 +110,8 @@ public class Indexer {
                     bw.flush();
                 }
                 fw.close();
-                termsDocs = new LinkedHashMap<>();
                 terms = new LinkedHashMap<>();
+                termsDocs = new LinkedHashMap<>();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -135,11 +146,17 @@ public class Indexer {
             String upperCase = termString.toUpperCase();
             if (terms.containsKey(upperCase))
                 terms.remove(upperCase);
-
         }
-        Term t = new Term(termString);
-        terms.put(termString, t);
-        termsDocs.put(termString, new ArrayList<String>());
+        Term t = null;
+        if (terms.containsKey(termString))
+            t = terms.get(termString);
+        else {
+            t = new Term(termString);
+            terms.put(termString, t);
+            termsDocs.put(termString, new ArrayList<String>());
+        }
+        t.increaseDF();
+        t.termFreq = t.termFreq + docTermFreq;
         termsDocs.get(termString).add(line);
     }
 
@@ -187,8 +204,15 @@ public class Indexer {
                 size = files.length;
             }
 
-            if (dir.equals("posting"))
-                splitLetters(index2);
+            if (dir.equals("posting")) {
+                String path = "";
+                if (index2 != 0)
+                    path = "posting\\tmp" + index2 + ".txt";
+                else
+                    path = "posting\\1.txt";
+                createDictionary(path);
+                splitLetters(path);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -276,15 +300,20 @@ public class Indexer {
                 String leftToken = split1[0];
                 String rightToken = split2[0];
                 if (leftToken.equalsIgnoreCase(rightToken)) {
-                    String[] details1 = split1[1].split("#");
-                    String[] details2 = split2[1].split("#");
-                    int tf = Integer.parseInt(details1[0]) + Integer.parseInt(details2[0]);
+                    String LeftTF = split1[1];
+                    String RightTF = split2[1];
+                    String[] details1 = split1[2].split("#");
+                    String[] details2 = split2[2].split("#");
+                    String LeftDF = details1[0];
+                    String RightDF = details2[0];
+                    int DF = Integer.parseInt(LeftDF) + Integer.parseInt(RightDF);
+                    int tf = Integer.parseInt(LeftTF) + Integer.parseInt(RightTF);
                     newToken = rightToken;
                     if (Character.isLetter(leftToken.charAt(0))) {
                         if (rightToken.charAt(0) < leftToken.charAt(0))
                             newToken = leftToken;
                     }
-                    newLine = newToken + "~" + tf + "#" + details1[1] + details2[1];
+                    newLine = newToken + "~" + tf + "~" + DF + "#" + details1[1] + details2[1];
                     leftLine = brLeft.readLine();
                     rightLine = brRight.readLine();
 
@@ -341,13 +370,9 @@ public class Indexer {
         }
     }
 
-    private void splitLetters(int pIndex) {
+    private void splitLetters(String path) {
         try {
-            FileReader fr;
-            if (pIndex != 0)
-                fr = new FileReader("posting\\tmp" + pIndex + ".txt");
-            else
-                fr = new FileReader("posting\\1.txt");
+            FileReader fr = new FileReader(path);
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
             char first = line.charAt(0);
@@ -356,9 +381,13 @@ public class Indexer {
                 String name = (first + "").toLowerCase();
                 FileWriter fw = new FileWriter(postPath + "\\" + name + ".txt", true);
                 BufferedWriter bw = new BufferedWriter(fw);
-                while (first == tmp) {
+                int lineNum = 0;
+                while (Character.toLowerCase(first) == Character.toLowerCase(tmp)) {
+                    lineNum++;
+                    String term = line.split("~")[0];
                     bw.write(line);
                     bw.newLine();
+                    dictionary.get(term).postingLine = lineNum;
                     line = br.readLine();
                     if (line == null)
                         break;
@@ -368,11 +397,7 @@ public class Indexer {
                 fw.close();
             }
             fr.close();
-            if (pIndex != 0)
-                Files.deleteIfExists(Paths.get("posting\\tmp" + pIndex + ".txt"));
-            else
-                Files.deleteIfExists(Paths.get("posting\\1.txt"));
-
+            Files.deleteIfExists(Paths.get(path));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -490,4 +515,32 @@ public class Indexer {
             Snum = s;
         return Snum;
     }
+
+    private void createDictionary(String path){
+        try {
+            dictionary = new LinkedHashMap<>();
+            FileReader fr = new FileReader(path);
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            while (line != null){
+                numOfTerms.incrementAndGet();
+                String[] split = line.split("~");
+                String term = split[0];
+                Term t = new Term(term);
+                t.termFreq = Integer.parseInt(split[1]);
+                t.docFreq = Integer.parseInt(split[2].split("#")[0]);
+                dictionary.put(term, t);
+                line = br.readLine();
+            }
+            fr.close();
+            File file = new File(postPath + "\\dictionary.txt");
+            file.createNewFile();
+            FileOutputStream fos = new FileOutputStream(postPath + "\\dictionary.txt");
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(dictionary);
+            oos.flush();
+            fos.close();
+        }catch(Exception e) { e.printStackTrace(); }
+    }
+
 }

@@ -11,7 +11,7 @@ public class Parse {
 
     private Indexer idxr;
     private String stopWordsPath;
-    //HashMap contains the terms of the document, and the location
+    //HashMap contains the terms of the document, and the locations
     private LinkedHashMap<String, LinkedHashSet<Integer>> docTerms;
     Stemmer stemmer;
 
