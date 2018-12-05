@@ -54,7 +54,7 @@ public class ReadFile {
         Indexer indexer = new Indexer();
         indexer.Merge(postPath, stem);
         System.out.println("finish index");
-        //language = Indexer.languages;
+        language = indexer.FinalLanguage;
         numOfDocs = Indexer.numOfDocs;
         numOfTerms = Indexer.numOfTerms;
         return indexer.dictionary;

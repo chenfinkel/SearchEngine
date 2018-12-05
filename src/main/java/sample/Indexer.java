@@ -5,18 +5,16 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.decimal4j.util.DoubleRounder;
-import org.json.JSONException;
-import org.json.JSONObject;
+
 import sun.awt.Mutex;
 
 import java.io.*;
 import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.Charset;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.Callable;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +49,8 @@ public class Indexer {
     private LinkedHashSet<String> languages;
 
     private String postPath;
+
+    public LinkedHashSet<String> FinalLanguage;
 
 
     public Indexer() {
@@ -188,9 +188,9 @@ public class Indexer {
         } else
             postPath = path;
         ExecutorService exeServ = Executors.newFixedThreadPool(3);
-        exeServ.submit(new mergeThread("docs", postPath));
-        exeServ.submit(new mergeThread("city", postPath));
-        exeServ.submit(new mergeThread("languages", postPath));
+        exeServ.submit(new mergeThread("docs", postPath, this));
+        exeServ.submit(new mergeThread("city", postPath, this));
+        exeServ.submit(new mergeThread("languages", postPath, this));
         exeServ.shutdown();
         try {
             exeServ.awaitTermination(30, TimeUnit.MINUTES);

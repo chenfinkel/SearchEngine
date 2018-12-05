@@ -8,16 +8,18 @@ import org.decimal4j.util.DoubleRounder;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.LinkedHashSet;
 
 public class mergeThread extends Thread{
 
     private String file;
-
+    private Indexer indexer;
     private String postPath;
 
-    public mergeThread(String file, String post) {
+    public mergeThread(String file, String post, Indexer index) {
         this.file = file;
         postPath = post;
+        indexer = index;
     }
 
     public void run() {
@@ -48,6 +50,18 @@ public class mergeThread extends Thread{
                 }
                 files = folders.listFiles();
                 size = files.length;
+            }
+            if (file.equals("languages")){
+                LinkedHashSet<String> languages = new LinkedHashSet<>();
+                FileReader fr = new FileReader(postPath + "\\languages.txt");
+                BufferedReader br = new BufferedReader(fr);
+                String line = br.readLine();
+                while (line != null) {
+                    languages.add(line);
+                    line = br.readLine();
+                }
+                indexer.FinalLanguage = languages;
+                fr.close();
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -43,6 +43,13 @@ public class ParseThread extends Thread {
                 date = removeSpaces(date);
                 String language = StringUtils.substringBetween(docs[i],"<F P=105>", " </F>");
                 language = removeSpaces(language);
+                char langfirst = language.charAt(0);
+                if (langfirst != 'X' && Character.isLetter(langfirst) && Character.isUpperCase(langfirst)) {
+                    String[] langWords = language.split("\\s+");
+                    if (langWords.length > 1)
+                        language = langWords[0];
+                } else
+                    language = "X";
                 String[] textsInDoc = StringUtils.substringsBetween(docs[i], "<TEXT>", "</TEXT>");
                 if (textsInDoc != null) {
                     for (int j = 0; j < textsInDoc.length; j++) {
@@ -67,7 +74,7 @@ public class ParseThread extends Thread {
             i++;
         }
         i = s.length()-1;
-        while (s.charAt(i) == ' ') {
+        while (s.charAt(i) == ' ' || s.charAt(i) == ',') {
             end++;
             i--;
         }
