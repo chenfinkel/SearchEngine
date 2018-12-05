@@ -52,12 +52,13 @@ public class ReadFile {
         try {
             exeServ.awaitTermination(30, TimeUnit.MINUTES);
         } catch (Exception e) { e.printStackTrace(); }
-
+        System.out.println("finish parse");
         Indexer indexer = new Indexer();
         indexer.Merge(postPath, stem);
+        System.out.println("finish index");
         language = Indexer.languages;
-        numOfDocs = Indexer.numOfDocs.get();
-        numOfTerms = Indexer.numOfTerms.get();
+        numOfDocs = Indexer.numOfDocs;
+        numOfTerms = Indexer.numOfTerms;
         return indexer.dictionary;
 
     }

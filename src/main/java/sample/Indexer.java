@@ -26,9 +26,9 @@ public class Indexer {
 
     private int fileIndex;
 
-    public static AtomicInteger numOfDocs;
+    public static int numOfDocs;
 
-    public static AtomicInteger numOfTerms;
+    public static int numOfTerms;
 
     //termsDocs maps a term to the documents it appeared in
     private LinkedHashMap<String, ArrayList<String>> termsDocs;
@@ -76,7 +76,9 @@ public class Indexer {
                 insert(termString, docTermFreq, DocID, locations);
             }
             docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + date + "~" + city + "~" + language);
-            numOfDocs.incrementAndGet();
+            m.lock();
+            numOfDocs++;
+            m.unlock();
         } else {
             try {
                 FileWriter fw = new FileWriter("posting\\" + fileIndex + ".txt");
@@ -523,7 +525,9 @@ public class Indexer {
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
             while (line != null){
-                numOfTerms.incrementAndGet();
+                m.lock();
+                numOfTerms++;
+                m.unlock();
                 String[] split = line.split("~");
                 String term = split[0];
                 Term t = new Term(term);

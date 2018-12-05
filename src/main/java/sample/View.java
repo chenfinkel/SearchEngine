@@ -67,7 +67,7 @@ public class View {
             VBox dialogVbox = new VBox(20);
             dialogVbox.getChildren().addAll(new Text("Process finished.\nNumber of unique terms: " + terms + "\n"
             + "Number of documents: " + docs + "\n" + "Total time: " + time + " seconds."));
-            Scene dialogScene = new Scene(dialogVbox, 300, 500);
+            Scene dialogScene = new Scene(dialogVbox, 300, 300);
             dialog.setScene(dialogScene);
             dialog.show();
 
