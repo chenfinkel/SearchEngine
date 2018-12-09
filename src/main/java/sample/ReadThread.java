@@ -6,7 +6,7 @@ import java.io.File;
 import java.io.IOException;
 
 /** a thread that parses a single folder */
-public class ParseThread extends Thread {
+public class ReadThread extends Thread {
 
     /** parser */
     private Parse parser;
@@ -18,12 +18,12 @@ public class ParseThread extends Thread {
     private boolean stem;
 
     /** empty constructor */
-    public ParseThread(){
+    public ReadThread(){
         parser = new Parse();
     }
 
     /** constructor */
-    public ParseThread(File folder, String corpusPath, String postPath, boolean stem){
+    public ReadThread(File folder, String corpusPath, String postPath, boolean stem){
         parser = new Parse(corpusPath + "\\stop_words.txt");
         this.stem = stem;
         this.folder = folder;
@@ -43,10 +43,14 @@ public class ParseThread extends Thread {
                 docID = removeSpaces(docID);
                 String city = StringUtils.substringBetween(docs[i],"<F P=104>", "</F>");
                 city = removeSpaces(city);
-                city = city.toUpperCase();
-                String[] cityWords = city.split("\\s+");
-                if (cityWords.length > 1)
-                    city = cityWords[0];
+                if(Character.isLetter(city.charAt(0))) {
+                    city = city.toUpperCase();
+                    String[] cityWords = city.split("\\s+");
+                    if (cityWords.length > 1)
+                        city = cityWords[0];
+                }
+                else
+                    city = "X";
                 String date = StringUtils.substringBetween(docs[i],"<DATE1>", " </DATE1>");
                 date = removeSpaces(date);
                 String language = StringUtils.substringBetween(docs[i],"<F P=105>", " </F>");

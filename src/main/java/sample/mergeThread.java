@@ -4,6 +4,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.decimal4j.util.DoubleRounder;
+import sun.awt.Mutex;
+
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
@@ -237,6 +239,7 @@ public class mergeThread extends Thread{
                 String country = StringUtils.substringBetween(page, '"' + "geobytescountry" + '"' + ":" + '"', '"' + ",");
                 if (country == null || country.equals(""))
                     country = "X";
+
                 return (city + "," + country + "," + population + "," + currency);
             }
         } catch (Exception e) {

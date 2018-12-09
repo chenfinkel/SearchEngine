@@ -1,5 +1,7 @@
 package sample;
 
+import sun.awt.Mutex;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -18,7 +20,7 @@ public class Parse {
     private LinkedHashMap<String, Integer> docTerms;
 
     /** stemmer */
-    Stemmer stemmer;
+    private Stemmer stemmer;
 
     /**  empty constructor */
     public Parse() {
@@ -112,6 +114,8 @@ public class Parse {
                     String month = isMonth(nextToken);
                     newToken = month + "-" + currToken;
                     i++;
+                }else {
+                    newToken = currToken;
                 }
             }
             else if (currToken.length() > 1 && currToken.charAt(0) == '$' && isANumber(currToken.substring(1, currToken.length()))){
@@ -200,18 +204,6 @@ public class Parse {
         return false;
     }
 
-    private HashSet<String> getStopWords(){
-        HashSet<String> sw = new HashSet<>();
-        Path path = Paths.get(stopWordsPath);
-        try {
-            String text = new String(Files.readAllBytes(path));
-            String[] stopWordsArray = text.split(System.lineSeparator());
-            for (int i = 0; i < stopWordsArray.length; i++)
-                sw.add(stopWordsArray[i]);
-        }catch(Exception e){ e.printStackTrace(); }
-        return sw;
-    }
-
     private String isMonth(String s){
         if (s.length() == 3) {
             if (s.equalsIgnoreCase("Jen"))
@@ -244,7 +236,7 @@ public class Parse {
         if (s.equalsIgnoreCase("February"))
             return "02";
         if (s.equalsIgnoreCase("March"))
-              return "03";
+            return "03";
         if (s.equalsIgnoreCase("April"))
             return "04";
         if (s.equalsIgnoreCase("June"))
@@ -262,6 +254,18 @@ public class Parse {
         if (s.equalsIgnoreCase("December"))
             return "12";
         return "false";
+    }
+
+    private HashSet<String> getStopWords(){
+        HashSet<String> sw = new HashSet<>();
+        Path path = Paths.get(stopWordsPath);
+        try {
+            String text = new String(Files.readAllBytes(path));
+            String[] stopWordsArray = text.split(System.lineSeparator());
+            for (int i = 0; i < stopWordsArray.length; i++)
+                sw.add(stopWordsArray[i]);
+        }catch(Exception e){ e.printStackTrace(); }
+        return sw;
     }
 
     private String parsePrice(String s, String next) {

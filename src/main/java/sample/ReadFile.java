@@ -56,7 +56,7 @@ public class ReadFile {
         File[] folders = mainFolder.listFiles();
             for (File folder : folders) {
             if(!folder.getName().equals("stop_words.txt"))
-                exeServ.submit(new ParseThread(folder, path, postPath, stem));
+                exeServ.submit(new ReadThread(folder, path, postPath, stem));
         }
         exeServ.shutdown();
         try {
@@ -70,7 +70,5 @@ public class ReadFile {
         numOfDocs = Indexer.numOfDocs;
         numOfTerms = Indexer.numOfTerms;
         return indexer.dictionary;
-
     }
-
 }

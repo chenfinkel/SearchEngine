@@ -136,6 +136,58 @@ public class Indexer {
         }
     }
 
+    private void insert(String termString, int docTermFreq, String DocID) {
+        if (termString.equals("")) return;
+        String line = DocID + "*" + docTermFreq;
+        if (Character.isUpperCase(termString.charAt(0))) {
+            String lowerCase = termString.toLowerCase();
+            if (terms.containsKey(lowerCase)) {
+                Term t = terms.get(lowerCase);
+                t.increaseDF();
+                t.termFreq = t.termFreq + docTermFreq;
+                termsDocs.get(lowerCase).add(line);
+                return;
+            } else {
+                termString = termString.toUpperCase();
+            }
+        } else {
+            termString = termString.toLowerCase();
+            String upperCase = termString.toUpperCase();
+            if (terms.containsKey(upperCase))
+                terms.remove(upperCase);
+        }
+        Term t = null;
+        if (terms.containsKey(termString))
+            t = terms.get(termString);
+        else {
+            t = new Term(termString);
+            terms.put(termString, t);
+            termsDocs.put(termString, new ArrayList<String>());
+        }
+        t.increaseDF();
+        t.termFreq = t.termFreq + docTermFreq;
+        termsDocs.get(termString).add(line);
+    }
+
+    private void writeTempFile(String path, Collection<String> c) {
+        try {
+            FileWriter fw = new FileWriter(path);
+            BufferedWriter bw = new BufferedWriter(fw);
+            ArrayList<String> sorted = new ArrayList<>();
+            sorted.addAll(c);
+            Collections.sort(sorted, new SortIgnoreCase());
+            for (int i = 0; i < sorted.size(); i++) {
+                String s = sorted.get(i);
+                bw.write(s);
+                bw.newLine();
+            }
+            bw.flush();
+            fw.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * merge all temorary posting files
      * @param path the location of the index
@@ -166,57 +218,6 @@ public class Indexer {
             String s2 = (String) o2;
             return s1.toLowerCase().compareTo(s2.toLowerCase());
         }
-    }
-
-    private void writeTempFile(String path, Collection<String> c) {
-        try {
-            FileWriter fw = new FileWriter(path);
-            BufferedWriter bw = new BufferedWriter(fw);
-            ArrayList<String> sorted = new ArrayList<>();
-            sorted.addAll(c);
-            Collections.sort(sorted, new SortIgnoreCase());
-            for (int i = 0; i < sorted.size(); i++) {
-                String s = sorted.get(i);
-                bw.write(s);
-                bw.newLine();
-            }
-            bw.flush();
-            fw.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void insert(String termString, int docTermFreq, String DocID) {
-        if (termString.equals("")) return;
-        String line = DocID + "*" + docTermFreq;
-        if (Character.isUpperCase(termString.charAt(0))) {
-            String lowerCase = termString.toLowerCase();
-            if (terms.containsKey(lowerCase)) {
-                Term t = terms.get(lowerCase);
-                t.increaseDF();
-                t.termFreq = t.termFreq + docTermFreq;
-                termsDocs.get(lowerCase).add(line);
-                return;
-            } else {
-                termString = termString.toUpperCase();
-            }
-        } else {
-            String upperCase = termString.toUpperCase();
-            if (terms.containsKey(upperCase))
-                terms.remove(upperCase);
-        }
-        Term t = null;
-        if (terms.containsKey(termString))
-            t = terms.get(termString);
-        else {
-            t = new Term(termString);
-            terms.put(termString, t);
-            termsDocs.put(termString, new ArrayList<String>());
-        }
-        t.increaseDF();
-        t.termFreq = t.termFreq + docTermFreq;
-        termsDocs.get(termString).add(line);
     }
 
     private void mergeDirectory() {
@@ -281,7 +282,7 @@ public class Indexer {
                     newToken = rightToken;
                     if (Character.isLetter(leftToken.charAt(0))) {
                         if (rightToken.charAt(0) < leftToken.charAt(0))
-                            newToken = leftToken;
+                            newToken = leftToken.toLowerCase();
                     }
                     newLine = newToken + "~" + tf + "~" + DF + "#" + details1[1] + details2[1];
                     leftLine = brLeft.readLine();
@@ -384,6 +385,8 @@ public class Indexer {
         try {
             FileWriter fw = new FileWriter(postPath + "\\dictionary.txt", true);
             BufferedWriter bw = new BufferedWriter(fw);
+            FileWriter fw1 = new FileWriter(postPath + "\\TMPdictionary.txt", true);
+            BufferedWriter bw1 = new BufferedWriter(fw1);
             List<String> sorted = new ArrayList<>();
             sorted.addAll(dictionary.keySet());
             Collections.sort(sorted, new Indexer.SortIgnoreCase());
@@ -391,9 +394,13 @@ public class Indexer {
                 String term = sorted.get(i);
                 Term t = dictionary.get(term);
                 bw.write(term + "#"+ t.termFreq + "#" + t.docFreq + "#"+ t.postingLine);
+                bw1.write(t.termFreq);
                 bw.newLine();
+                bw1.newLine();
             }
             bw.flush();
+            bw1.flush();
+            fw1.close();
             fw.close();
         }catch (Exception e) { e.printStackTrace(); }
     }

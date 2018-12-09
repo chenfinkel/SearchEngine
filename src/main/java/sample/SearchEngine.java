@@ -163,4 +163,12 @@ public class SearchEngine {
             return s1.toLowerCase().compareTo(s2.toLowerCase());
         }
     }
+
+    public class SortByTF implements Comparator<Object> {
+        public int compare(Object o1, Object o2) {
+            int tf1 = ((Term)o1).termFreq;
+            int tf2 = ((Term)o2).termFreq;
+            return tf1-tf2;
+        }
+    }
 }
