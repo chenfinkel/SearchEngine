@@ -15,6 +15,10 @@ public class Controller {
 
     }
 
+    public void resetSE(){
+        se = new SearchEngine();
+    }
+
     public double startSE(String path, String postPath, boolean stem) {
         se.setProps(path,postPath,stem);
         return se.start();
@@ -32,12 +36,12 @@ public class Controller {
         view = v;
     }
 
-    public String getDictionary(){
-        return se.getDictionary();
+    public String getDictionary(boolean stem){
+        return se.getDictionary(stem);
     }
 
-    public void loadDict(String path){
-        se.loadDict(path);
+    public void loadDict(String path, boolean stem){
+        se.loadDict(path, stem);
     }
 
     public LinkedHashSet<String> getLanguage(){

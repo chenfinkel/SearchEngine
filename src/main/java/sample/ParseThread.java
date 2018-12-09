@@ -2,29 +2,37 @@ package sample;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-
 import java.io.File;
 import java.io.IOException;
 
+/** a thread that parses a single folder */
 public class ParseThread extends Thread {
 
-    //parser
+    /** parser */
     private Parse parser;
 
+    /** the folder to parse */
     private File folder;
 
+    /** stemming flag */
     private boolean stem;
 
+    /** empty constructor */
     public ParseThread(){
         parser = new Parse();
     }
 
+    /** constructor */
     public ParseThread(File folder, String corpusPath, String postPath, boolean stem){
         parser = new Parse(corpusPath + "\\stop_words.txt");
         this.stem = stem;
         this.folder = folder;
     }
 
+    /**
+     * override
+     * reads all folder's files, seperates the main tags for each document and send if to indexing
+     */
     public void run(){
         try {
             File file = folder.listFiles()[0];

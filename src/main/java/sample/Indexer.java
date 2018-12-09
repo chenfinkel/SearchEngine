@@ -1,58 +1,63 @@
 package sample;
 
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.decimal4j.util.DoubleRounder;
-
 import sun.awt.Mutex;
-
 import java.io.*;
-import java.net.URL;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+/** this class takes a list of parsed terms, and creates an index containing posting files and dictionary */
 public class Indexer {
 
+    /** the id of the indexer */
     public static int index = 0;
 
+    /** mutex for indexer's id */
     public static Mutex m = new Mutex();
 
+    /** mutex for number of documents */
     public static Mutex numOfDocsMutex = new Mutex();
 
+    /** mutex for number of terms */
     public static Mutex numOfTermsMutex = new Mutex();
 
+    /** the id of the file */
     private int fileIndex;
 
+    /** number of total documents */
     public static int numOfDocs;
 
+    /** number of total unique terms */
     public static int numOfTerms;
 
-    //termsDocs maps a term to the documents it appeared in
+    /** maps a term to the documents it appeared in */
     private LinkedHashMap<String, ArrayList<String>> termsDocs;
 
+    /** maps a term to it's object */
     private LinkedHashMap<String, Term> terms;
 
+    /** a list of documents */
     private LinkedHashSet<String> docs;
 
+    /** the dictionary for the terms */
     public LinkedHashMap<String, Term> dictionary;
 
+    /** a list of the cities of the documents */
     private LinkedHashSet<String> cities;
 
+    /** a list of the languages of the file */
     private LinkedHashSet<String> languages;
 
+    /** the location of the index */
     private String postPath;
 
+    /** a final list the languages */
     public LinkedHashSet<String> FinalLanguage;
 
-
+    /** empty constructor */
     public Indexer() {
         terms = new LinkedHashMap<>();
         termsDocs = new LinkedHashMap<>();
@@ -65,7 +70,14 @@ public class Indexer {
         m.unlock();
     }
 
-    //string- the term, int- df in - docid- docNo
+    /**
+     * this method saves the terms and documents, until the parser tell it to index a temporary posting file
+     * @param docTerms the terms of a document
+     * @param DocID the document id
+     * @param city the city of the document
+     * @param date the date of the creation of the document
+     * @param language the language of the document
+     */
     public void Index(HashMap<String, Integer> docTerms, String DocID, String city, String date, String language) {
         if (docTerms != null) {
             if (!city.equals("X"))
@@ -121,9 +133,39 @@ public class Indexer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            //hi 
         }
+    }
 
+    /**
+     * merge all temorary posting files
+     * @param path the location of the index
+     * @param stem if stemming was done
+     */
+    public void Merge(String path, boolean stem) {
+        if (stem) {
+            postPath = path + "\\stemmed";
+            new File(postPath).mkdirs();
+        } else
+            postPath = path;
+        ExecutorService exeServ = Executors.newFixedThreadPool(3);
+        exeServ.submit(new mergeThread("docs", postPath, this));
+        exeServ.submit(new mergeThread("city", postPath, this));
+        exeServ.submit(new mergeThread("languages", postPath, this));
+        exeServ.shutdown();
+        try {
+            exeServ.awaitTermination(30, TimeUnit.MINUTES);
+        } catch (Exception e) { e.printStackTrace(); }
+        mergeDirectory();
+        saveDictionary();
+    }
+
+    /** sort class for sorting string collections ignore case */
+    public class SortIgnoreCase implements Comparator<Object> {
+        public int compare(Object o1, Object o2) {
+            String s1 = (String) o1;
+            String s2 = (String) o2;
+            return s1.toLowerCase().compareTo(s2.toLowerCase());
+        }
     }
 
     private void writeTempFile(String path, Collection<String> c) {
@@ -145,8 +187,6 @@ public class Indexer {
         }
     }
 
-
-    // CHECK UPPERCASE CODE
     private void insert(String termString, int docTermFreq, String DocID) {
         if (termString.equals("")) return;
         String line = DocID + "*" + docTermFreq;
@@ -179,202 +219,31 @@ public class Indexer {
         termsDocs.get(termString).add(line);
     }
 
-
-    //TAKES TOO MUCH TIME (OVER 5 MINUTES) AND WE DONT HANDLE DUPLICATES
-    public void Merge(String path, boolean stem) {
-        if (stem) {
-            postPath = path + "\\stemmed";
-            new File(postPath).mkdirs();
-        } else
-            postPath = path;
-        ExecutorService exeServ = Executors.newFixedThreadPool(3);
-        exeServ.submit(new mergeThread("docs", postPath, this));
-        exeServ.submit(new mergeThread("city", postPath, this));
-        exeServ.submit(new mergeThread("languages", postPath, this));
-        exeServ.shutdown();
-        try {
-            exeServ.awaitTermination(30, TimeUnit.MINUTES);
-        } catch (Exception e) { e.printStackTrace(); }
-        mergeDirectory("posting");
-    }
-
-    private void mergeDirectory(String dir) {
+    private void mergeDirectory() {
         try {
             int index2 = 0;
-            File folders = new File("C:\\" + dir);
+            File folders = new File("C:\\posting");
             File[] files = folders.listFiles();
             int size = files.length;
-            if (size == 1 && (dir.equals("docs") || dir.equals("language") || dir.equals("city"))) {
-                FileUtils.copyFile(files[0], new File(postPath + "\\" + dir + ".txt"));
-                Files.deleteIfExists(files[0].toPath());
-            }
             while (size > 1) {
                 int i;
                 for (i = 0; i < size - 1; i = i + 2) {
                     index2++;
                     File f1 = files[i];
                     File f2 = files[i + 1];
-                    if (dir.equals("posting"))
-                        mergePosting(f1, f2, index2);
-                    else {
-                        if (size == 2) {
-                            if(dir.equals("city"))
-                                mergeCities(f1, f2);
-                            else
-                                mergeFiles(f1, f2, index2, true, dir);
-                            break;
-                        } else
-                            mergeFiles(f1, f2, index2, false, dir);
-                    }
+                    mergePosting(f1, f2, index2);
                 }
                 files = folders.listFiles();
                 size = files.length;
             }
-
-            if (dir.equals("posting")) {
-                String path = "";
-                if (index2 != 0)
-                    path = "C:\\posting\\tmp" + index2 + ".txt";
-                else
-                    path = "C:\\posting\\1.txt";
-                createDictionary(path);
-                splitLetters(path);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void mergeFiles(File left, File right, int TmpIndex, boolean flag, String dir) {
-        try {
-            FileWriter fw;
-            if (flag)
-                fw = new FileWriter(postPath + "\\" + dir + ".txt");
+            String path = "";
+            if (index2 != 0)
+                path = "C:\\posting\\tmp" + index2 + ".txt";
             else
-                fw = new FileWriter("C:\\" + dir + "\\tmp" + TmpIndex + ".txt");
-            BufferedWriter bw = new BufferedWriter(fw);
-            FileReader frLeft = new FileReader(left.getPath());
-            BufferedReader brLeft = new BufferedReader(frLeft);
-            FileReader frRight = new FileReader(right.getPath());
-            BufferedReader brRight = new BufferedReader(frRight);
-            int leftIdx = 0;
-            int rightIdx = 0;
-            String newLine = "";
-            String leftLine = brLeft.readLine();
-            String rightLine = brRight.readLine();
-            while (leftLine != null && rightLine != null) {
-                if (leftLine.equals("") || rightLine.equals(""))
-                    continue;
-                String leftToken = leftLine;
-                String rightToken = rightLine;
-                if (dir.equals("docs")) {
-                    String[] split1 = leftLine.split("~");
-                    String[] split2 = rightLine.split("~");
-                    leftToken = split1[0];
-                    rightToken = split2[0];
-                }
-                if (leftToken.equalsIgnoreCase(rightToken)) {
-                    bw.write(leftLine);
-                    bw.newLine();
-                    leftLine = brLeft.readLine();
-                    rightLine = brRight.readLine();
-                } else if (leftToken.compareToIgnoreCase(rightToken) < 0) {
-                    bw.write(leftLine);
-                    bw.newLine();
-                    leftLine = brLeft.readLine();
-                } else {
-                    bw.write(rightLine);
-                    bw.newLine();
-                    rightLine = brRight.readLine();
-                }
-            }
-            if (leftLine != null) {
-                bw.write(leftLine);
-                bw.newLine();
-                while ((leftLine = brLeft.readLine()) != null) {
-                    bw.write(leftLine);
-                    bw.newLine();
-                }
-            }
-            if (rightLine != null) {
-                bw.write(rightLine);
-                bw.newLine();
-                while ((rightLine = brRight.readLine()) != null) {
-                    bw.write(rightLine);
-                    bw.newLine();
-                }
-            }
-            bw.flush();
-            fw.close();
-            frLeft.close();
-            frRight.close();
-            Files.deleteIfExists(left.toPath());
-            Files.deleteIfExists(right.toPath());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+                path = "C:\\posting\\1.txt";
+            createDictionary(path);
+            splitLetters(path);
 
-    private void mergeCities(File left, File right) {
-        try {
-            FileWriter fw = new FileWriter(postPath + "\\cities.txt");
-            BufferedWriter bw = new BufferedWriter(fw);
-            FileReader frLeft = new FileReader(left.getPath());
-            BufferedReader brLeft = new BufferedReader(frLeft);
-            FileReader frRight = new FileReader(right.getPath());
-            BufferedReader brRight = new BufferedReader(frRight);
-            int leftIdx = 0;
-            int rightIdx = 0;
-            String newLine = "";
-            String leftLine = brLeft.readLine();
-            String rightLine = brRight.readLine();
-            while (leftLine != null && rightLine != null) {
-                if (leftLine.equals("") || rightLine.equals(""))
-                    continue;
-                if (leftLine.equalsIgnoreCase(rightLine)) {
-                    newLine = getDetails(leftLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                    leftLine = brLeft.readLine();
-                    rightLine = brRight.readLine();
-                } else if (leftLine.compareToIgnoreCase(rightLine) < 0) {
-                    newLine = getDetails(leftLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                    leftLine = brLeft.readLine();
-                } else {
-                    newLine = getDetails(rightLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                    rightLine = brRight.readLine();
-                }
-            }
-            if (leftLine != null) {
-                newLine = getDetails(leftLine);
-                bw.write(newLine);
-                bw.newLine();
-                while ((leftLine = brLeft.readLine()) != null) {
-                    newLine = getDetails(leftLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                }
-            }
-            if (rightLine != null) {
-                newLine = getDetails(rightLine);
-                bw.write(newLine);
-                bw.newLine();
-                while ((rightLine = brRight.readLine()) != null) {
-                    newLine = getDetails(rightLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                }
-            }
-            bw.flush();
-            fw.close();
-            frLeft.close();
-            frRight.close();
-            Files.deleteIfExists(left.toPath());
-            Files.deleteIfExists(right.toPath());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -487,70 +356,6 @@ public class Indexer {
         }
     }
 
-    public class SortIgnoreCase implements Comparator<Object> {
-        public int compare(Object o1, Object o2) {
-            String s1 = (String) o1;
-            String s2 = (String) o2;
-            return s1.toLowerCase().compareTo(s2.toLowerCase());
-        }
-    }
-
-    private String getDetails(String city) {
-        try {
-            URL url = new URL("http://getcitydetails.geobytes.com/GetCityDetails?fqcn=" + city);
-            if (url != null) {
-
-                String page = IOUtils.toString(url.openConnection().getInputStream());
-
-                String currency = StringUtils.substringBetween(page, '"'+"geobytescurrencycode"+'"'+":"+'"', '"'+",");
-                if (currency == null || currency.equals(""))
-                    currency = "X";
-                String pop = StringUtils.substringBetween(page, '"'+"geobytespopulation"+'"'+":"+'"', '"'+",");
-                String population;
-                if (pop == null || pop.equals(""))
-                    population = "X";
-                else
-                    population = getNumber(pop);
-                String country = StringUtils.substringBetween(page, '"'+"geobytescountry"+'"'+":"+'"', '"'+",");
-                if (country == null || country.equals(""))
-                    country = "X";
-                return (city + "," + country + "," + population + "," + currency);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    private String getNumber(String s) {
-        double num = Double.parseDouble(s);
-        String Snum = "";
-        if (num >= 1000000000) {
-            num = num / 1000000000;
-            num = DoubleRounder.round(num, 2);
-            if (num == (int) num)
-                Snum = (int) num + "B";
-            else
-                Snum = num + "B";
-        } else if (num >= 1000000) {
-            num = num / 1000000;
-            num = DoubleRounder.round(num, 2);
-            if (num == (int) num)
-                Snum = (int) num + "M";
-            else
-                Snum = num + "M";
-        } else if (num >= 1000) {
-            num = num / 1000;
-            num = DoubleRounder.round(num, 2);
-            if (num == (int) num)
-                Snum = (int) num + "K";
-            else
-                Snum = num + "K";
-        } else
-            Snum = s;
-        return Snum;
-    }
-
     private void createDictionary(String path) {
         try {
             dictionary = new LinkedHashMap<>();
@@ -570,16 +375,27 @@ public class Indexer {
                 line = br.readLine();
             }
             fr.close();
-            File file = new File(postPath + "\\dictionary.txt");
-            file.createNewFile();
-            FileOutputStream fos = new FileOutputStream(postPath + "\\dictionary.txt");
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(dictionary);
-            oos.flush();
-            fos.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void saveDictionary(){
+        try {
+            FileWriter fw = new FileWriter(postPath + "\\dictionary.txt", true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            List<String> sorted = new ArrayList<>();
+            sorted.addAll(dictionary.keySet());
+            Collections.sort(sorted, new Indexer.SortIgnoreCase());
+            for (int i = 0; i < sorted.size(); i++){
+                String term = sorted.get(i);
+                Term t = dictionary.get(term);
+                bw.write(term + "#"+ t.termFreq + "#" + t.docFreq + "#"+ t.postingLine);
+                bw.newLine();
+            }
+            bw.flush();
+            fw.close();
+        }catch (Exception e) { e.printStackTrace(); }
     }
 
 }

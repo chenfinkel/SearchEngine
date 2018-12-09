@@ -4,24 +4,35 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.decimal4j.util.DoubleRounder;
-
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.LinkedHashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
+/** a thread for merging temporary index files */
 public class mergeThread extends Thread{
 
+    /** the type of file to merge */
     private String file;
+
+    /** indexer */
     private Indexer indexer;
+
+    /** the location of the merged files */
     private String postPath;
 
+    /** constructor */
     public mergeThread(String file, String post, Indexer index) {
         this.file = file;
         postPath = post;
         indexer = index;
     }
 
+    /**
+     * override
+     * this method merges the temporary files of the indexe
+     */
     public void run() {
         try {
             int index2 = 0;
@@ -29,8 +40,12 @@ public class mergeThread extends Thread{
             File[] files = folders.listFiles();
             int size = files.length;
             if (size == 1) {
-                FileUtils.copyFile(files[0], new File(postPath + "\\" + file + ".txt"));
-                Files.deleteIfExists(files[0].toPath());
+                if (file.equals("city"))
+                    copyCities(files[0]);
+                else {
+                    FileUtils.copyFile(files[0], new File(postPath + "\\" + file + ".txt"));
+                    Files.deleteIfExists(files[0].toPath());
+                }
             }
             while (size > 1) {
                 int i;
@@ -257,6 +272,24 @@ public class mergeThread extends Thread{
         } else
             Snum = s;
         return Snum;
+    }
+
+    private void copyCities(File file){
+        try {
+            FileWriter fw = new FileWriter(postPath + "\\cities.txt", true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            FileReader fr = new FileReader(file.getPath());
+            BufferedReader br = new BufferedReader(fr);
+            String city = br.readLine();
+            while (city != null) {
+                bw.write(getDetails(city));
+                bw.newLine();
+                city = br.readLine();
+            }
+            bw.flush();
+            fw.close();
+            fr.close();
+        }catch (Exception e) { e.printStackTrace(); }
     }
 
 

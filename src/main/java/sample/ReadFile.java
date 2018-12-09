@@ -1,34 +1,45 @@
 package sample;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-
+/**
+ * this class reads a document corpus
+ */
 public class ReadFile {
 
-    //private Parse parser;
+    /** the location of the corpus */
     private String path;
+
+    /** the path where the index files will be saved */
     private String postPath;
+
+    /** indicates if the parsing process is done with stemming or not */
     private boolean stem;
+
+    /** thread pool */
     private ExecutorService exeServ;
+
+    /** a list of the languages of the files */
     public LinkedHashSet<String> language;
+
+    /** total number of unique terms in the corpus */
     public int numOfTerms;
+
+    /** total number of documents in the corpus */
     public int numOfDocs;
 
 
+    /** empty constructor */
     public ReadFile(){
         path = "";
     }
 
+    /** constructor */
     public ReadFile(String path, String postPath, boolean stem) {
         this.path = path;
         this.postPath = postPath;
@@ -37,7 +48,8 @@ public class ReadFile {
     }
 
     /**
-     * Read all file and separate them into documents
+     * Read all files, separate them into documents and send it to parser
+     * @return the dictionary of the search engine
      */
     public LinkedHashMap<String, Term> read(){
         File mainFolder = new File(path);

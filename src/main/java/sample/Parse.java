@@ -1,32 +1,38 @@
 package sample;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+/** this class parse a text */
 public class Parse {
 
-
+    /** index the parsed terms */
     private Indexer idxr;
+
+    /** the location of the stop words file */
     private String stopWordsPath;
-    //HashMap contains the terms of the document, and the frequency
+
+    /** the terms of the text, and the frequency */
     private LinkedHashMap<String, Integer> docTerms;
+
+    /** stemmer */
     Stemmer stemmer;
 
-
+    /**  empty constructor */
     public Parse() {
         idxr = new Indexer();
     }
 
+    /**  constructor */
     public Parse(String stopWordsPath){
         idxr = new Indexer();
         this.stopWordsPath = stopWordsPath;
     }
 
     /**
-     *
+     * parses a text and sends it to the indexer
      * @param text is the document text
      * @param docID is the id of the document
      */
@@ -344,11 +350,6 @@ public class Parse {
         return Snum;
     }
 
-    /**
-     * The method tokenizes the text and returns a list of the tokens.
-     * @param text is the original text we get from the readFile
-     * @returns a string tokenizer thats holding the tokens after tokenizing them
-     */
     private ArrayList<String> tokenize(String text) {
         String finalText = "";
         String[] splitByCommaSpace = text.split(", ");
