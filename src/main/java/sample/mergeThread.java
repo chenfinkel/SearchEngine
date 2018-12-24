@@ -38,7 +38,7 @@ public class mergeThread extends Thread{
     public void run() {
         try {
             int index2 = 0;
-            File folders = new File("C:\\" + file);
+            File folders = new File("C:\\TempFiles\\" + file);
             File[] files = folders.listFiles();
             int size = files.length;
             if (size == 1) {
@@ -91,7 +91,7 @@ public class mergeThread extends Thread{
             if (flag)
                 fw = new FileWriter(postPath + "\\" + dir + ".txt");
             else
-                fw = new FileWriter("C:\\" + dir + "\\tmp" + TmpIndex + ".txt");
+                fw = new FileWriter("C:\\TempFiles\\" + dir + "\\tmp" + TmpIndex + ".txt");
             BufferedWriter bw = new BufferedWriter(fw);
             FileReader frLeft = new FileReader(left.getPath());
             BufferedReader brLeft = new BufferedReader(frLeft);

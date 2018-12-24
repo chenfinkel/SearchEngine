@@ -57,4 +57,12 @@ public class Controller {
         se = new SearchEngine();
     }
 
+
+    public void RunSingleQuery(String query) {
+        se.RunSingleQuery(query);
+    }
+
+    public void RunMultipleQueries(String queryFilePath) {
+        se.RunMultipleQueries(queryFilePath);
+    }
 }

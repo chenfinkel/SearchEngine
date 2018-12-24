@@ -1,6 +1,7 @@
 package sample;
 
 import sun.awt.Mutex;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -9,55 +10,59 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/** this class takes a list of parsed terms, and creates an index containing posting files and dictionary */
+/**
+ * this class takes a list of parsed terms, and creates an index containing posting files and dictionary
+ */
 public class Indexer {
 
-    /** the id of the indexer */
+    /** the id of the indexer*/
     public static int index = 0;
 
-    /** mutex for indexer's id */
+    /**mutex for indexer's id*/
     public static Mutex m = new Mutex();
 
-    /** mutex for number of documents */
+    /**mutex for number of documents*/
     public static Mutex numOfDocsMutex = new Mutex();
 
-    /** mutex for number of terms */
+    /**mutex for number of terms*/
     public static Mutex numOfTermsMutex = new Mutex();
 
-    /** the id of the file */
+    /**the id of the file*/
     private int fileIndex;
 
-    /** number of total documents */
+    /**number of total documents*/
     public static int numOfDocs;
 
-    /** number of total unique terms */
+    /**number of total unique terms*/
     public static int numOfTerms;
 
-    /** maps a term to the documents it appeared in */
+    /**maps a term to the documents it appeared in*/
     private LinkedHashMap<String, ArrayList<String>> termsDocs;
 
-    /** maps a term to it's object */
+    /**maps a term to it's object*/
     private LinkedHashMap<String, Term> terms;
 
-    /** a list of documents */
+    /**a list of documents*/
     private LinkedHashSet<String> docs;
 
-    /** the dictionary for the terms */
+    /**the dictionary for the terms*/
     public LinkedHashMap<String, Term> dictionary;
 
-    /** a list of the cities of the documents */
+    /**a list of the cities of the documents*/
     private LinkedHashSet<String> cities;
 
-    /** a list of the languages of the file */
+    /** a list of the languages of the file*/
     private LinkedHashSet<String> languages;
 
-    /** the location of the index */
+    /** the location of the index*/
     private String postPath;
 
-    /** a final list the languages */
+    /** a final list the languages*/
     public LinkedHashSet<String> FinalLanguage;
 
-    /** empty constructor */
+    public static Mutex tfm = new Mutex();
+
+    /** empty constructor*/
     public Indexer() {
         terms = new LinkedHashMap<>();
         termsDocs = new LinkedHashMap<>();
@@ -72,34 +77,44 @@ public class Indexer {
 
     /**
      * this method saves the terms and documents, until the parser tell it to index a temporary posting file
+     *
      * @param docTerms the terms of a document
-     * @param DocID the document id
-     * @param city the city of the document
-     * @param date the date of the creation of the document
+     * @param DocID    the document id
+     * @param city     the city of the document
+     * @param date     the date of the creation of the document
      * @param language the language of the document
      */
     public void Index(HashMap<String, Integer> docTerms, String DocID, String city, String date, String language) {
-        if (docTerms != null) {
-            if (!city.equals("X"))
-                cities.add(city);
-            if (!language.equals("X"))
-                languages.add(language);
-            int maxTF = 0;
-            Iterator it = docTerms.keySet().iterator();
-            while (it.hasNext()) {
-                String termString = (String) it.next();
-                int docTermFreq = docTerms.get(termString);
-                if (docTermFreq > maxTF)
-                    maxTF = docTermFreq;
-                insert(termString, docTermFreq, DocID);
-            }
-            docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + date + "~" + city + "~" + language);
-            numOfDocsMutex.lock();
-            numOfDocs++;
-            numOfDocsMutex.unlock();
-        } else {
-            try {
-                FileWriter fw = new FileWriter("C:\\posting\\" + fileIndex + ".txt");
+        try {
+            if (docTerms != null) {
+                if (!city.equals("X"))
+                    cities.add(city);
+                if (!language.equals("X"))
+                    languages.add(language);
+                int maxTF = 0;
+                tfm.lock();
+                FileWriter fw = new FileWriter("C:\\TempFiles\\DocTF\\docTF.txt", true);
+                BufferedWriter bw = new BufferedWriter(fw);
+                bw.write(DocID+":");
+                Iterator it = docTerms.keySet().iterator();
+                while (it.hasNext()) {
+                    String termString = (String) it.next();
+                    int docTermFreq = docTerms.get(termString);
+                    bw.write(termString + "*" + docTermFreq + "~");
+                    if (docTermFreq > maxTF)
+                        maxTF = docTermFreq;
+                    insert(termString, docTermFreq, DocID);
+                }
+                bw.newLine();
+                bw.flush();
+                fw.close();
+                tfm.unlock();
+                docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + date + "~" + city + "~" + language);
+                numOfDocsMutex.lock();
+                numOfDocs++;
+                numOfDocsMutex.unlock();
+            } else {
+                FileWriter fw = new FileWriter("C:\\TempFiles\\posting\\" + fileIndex + ".txt");
                 BufferedWriter bw = new BufferedWriter(fw);
                 List<String> sorted = new ArrayList<>();
                 sorted.addAll(terms.keySet());
@@ -119,21 +134,19 @@ public class Indexer {
                 bw.flush();
                 fw.close();
 
-                writeTempFile("C:\\docs\\file" + fileIndex + ".txt", docs);
+                writeTempFile("C:\\TempFiles\\docs\\file" + fileIndex + ".txt", docs);
 
-                writeTempFile("C:\\city\\file" + fileIndex + ".txt", cities);
+                writeTempFile("C:\\TempFiles\\city\\file" + fileIndex + ".txt", cities);
 
-                writeTempFile("C:\\languages\\file" + fileIndex + ".txt", languages);
+                writeTempFile("C:\\TempFiles\\languages\\file" + fileIndex + ".txt", languages);
 
                 terms = new LinkedHashMap<>();
                 termsDocs = new LinkedHashMap<>();
                 docs = new LinkedHashSet<>();
                 cities = new LinkedHashSet<>();
                 languages = new LinkedHashSet<>();
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     private void insert(String termString, int docTermFreq, String DocID) {
@@ -190,6 +203,7 @@ public class Indexer {
 
     /**
      * merge all temorary posting files
+     *
      * @param path the location of the index
      * @param stem if stemming was done
      */
@@ -206,12 +220,16 @@ public class Indexer {
         exeServ.shutdown();
         try {
             exeServ.awaitTermination(30, TimeUnit.MINUTES);
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         mergeDirectory();
         saveDictionary();
     }
 
-    /** sort class for sorting string collections ignore case */
+    /**
+     * sort class for sorting string collections ignore case
+     */
     public class SortIgnoreCase implements Comparator<Object> {
         public int compare(Object o1, Object o2) {
             String s1 = (String) o1;
@@ -223,7 +241,7 @@ public class Indexer {
     private void mergeDirectory() {
         try {
             int index2 = 0;
-            File folders = new File("C:\\posting");
+            File folders = new File("C:\\TempFiles\\posting");
             File[] files = folders.listFiles();
             int size = files.length;
             while (size > 1) {
@@ -239,9 +257,9 @@ public class Indexer {
             }
             String path = "";
             if (index2 != 0)
-                path = "C:\\posting\\tmp" + index2 + ".txt";
+                path = "C:\\TempFiles\\posting\\tmp" + index2 + ".txt";
             else
-                path = "C:\\posting\\1.txt";
+                path = "C:\\TempFiles\\posting\\1.txt";
             createDictionary(path);
             splitLetters(path);
 
@@ -252,7 +270,7 @@ public class Indexer {
 
     private void mergePosting(File left, File right, int TmpIndex) {
         try {
-            FileWriter fw = new FileWriter("C:\\posting\\tmp" + TmpIndex + ".txt");
+            FileWriter fw = new FileWriter("C:\\TempFiles\\posting\\tmp" + TmpIndex + ".txt");
             BufferedWriter bw = new BufferedWriter(fw);
             FileReader frLeft = new FileReader(left.getPath());
             BufferedReader brLeft = new BufferedReader(frLeft);
@@ -381,28 +399,24 @@ public class Indexer {
         }
     }
 
-    private void saveDictionary(){
+    private void saveDictionary() {
         try {
             FileWriter fw = new FileWriter(postPath + "\\dictionary.txt", true);
             BufferedWriter bw = new BufferedWriter(fw);
-            FileWriter fw1 = new FileWriter(postPath + "\\TMPdictionary.txt", true);
-            BufferedWriter bw1 = new BufferedWriter(fw1);
             List<String> sorted = new ArrayList<>();
             sorted.addAll(dictionary.keySet());
             Collections.sort(sorted, new Indexer.SortIgnoreCase());
-            for (int i = 0; i < sorted.size(); i++){
+            for (int i = 0; i < sorted.size(); i++) {
                 String term = sorted.get(i);
                 Term t = dictionary.get(term);
-                bw.write(term + "#"+ t.termFreq + "#" + t.docFreq + "#"+ t.postingLine);
-                bw1.write(t.termFreq);
+                bw.write(term + "#" + t.termFreq + "#" + t.docFreq + "#" + t.postingLine);
                 bw.newLine();
-                bw1.newLine();
             }
             bw.flush();
-            bw1.flush();
-            fw1.close();
             fw.close();
-        }catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

@@ -1,7 +1,6 @@
 package sample;
 
 import javafx.collections.FXCollections;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -10,12 +9,9 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.fxml.FXMLLoader;
-
-import java.awt.event.ActionEvent;
+import javafx.scene.control.*;
 import java.io.File;
 import java.util.LinkedHashSet;
 
@@ -24,25 +20,29 @@ public class View {
     private Stage stage;
 
     @FXML
-    public javafx.scene.control.CheckBox stemming;
+    public CheckBox stemming;
     @FXML
-    public javafx.scene.control.TextField Corpus;
+    public TextField Corpus;
     @FXML
-    public javafx.scene.control.TextField Posting;
+    public TextField Posting;
     @FXML
-    public javafx.scene.control.Button browseCorpus;
+    public Button browseCorpus;
     @FXML
-    public javafx.scene.control.Button browsePosting;
+    public Button browsePosting;
     @FXML
-    public javafx.scene.control.Button startBtn;
+    public Button startBtn;
     @FXML
-    public javafx.scene.control.Button showDict;
+    public Button showDict;
     @FXML
-    public javafx.scene.control.Button loadDict;
+    public Button loadDict;
     @FXML
-    public javafx.scene.control.ChoiceBox languages;
+    public ChoiceBox languages;
     @FXML
-    public javafx.scene.control.Button resetBtn;
+    public Button resetBtn;
+    @FXML
+    public TextField queryFile;
+    @FXML
+    public TextField singleQry;
 
     public View() {
         control = new Controller();
@@ -121,5 +121,33 @@ public class View {
         boolean stem = stemming.isSelected();
         if (!path.equals(""))
             control.loadDict(path, stem);
+    }
+
+    public void BrowseQueries(){
+        DirectoryChooser dc = new DirectoryChooser();
+        dc.setTitle("Choose Queries Path");
+        File f = dc.showDialog(stage);
+        if (f != null)
+            queryFile.setText(f.getPath());
+    }
+
+    public void getEntities(){
+
+    }
+
+    public void Run(){
+        String queriesFile = queryFile.getText();
+        String query = singleQry.getText();
+        if ((queriesFile.equals("") && query.equals("")) ||(!queriesFile.equals("") && !query.equals(""))) {
+            Alert a = new Alert(Alert.AlertType.INFORMATION);
+            a.setContentText("YOU MUST ENTER A QUERY OR A QUERIES FILE!");
+            a.show();
+        } else {
+            if (!query.equals(""))
+                control.RunSingleQuery(query);
+            else
+                control.RunMultipleQueries(queriesFile);
+        }
+
     }
 }

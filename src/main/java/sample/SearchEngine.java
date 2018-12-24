@@ -1,8 +1,12 @@
 package sample;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.decimal4j.util.DoubleRounder;
+
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 /** This class represents a search engine */
@@ -24,12 +28,17 @@ public class SearchEngine {
     /** the dictionary of the search engine after prasing and indexing */
     public LinkedHashMap<String, Term> dictionary;
 
+    /** the searcher of the engine */
+    private Searcher searcher;
+
     /** constructor */
     public SearchEngine() {
-        new File("C:\\posting").mkdirs();
-        new File("C:\\docs").mkdirs();
-        new File("C:\\city").mkdirs();
-        new File("C:\\languages").mkdirs();
+        new File("C:\\TempFiles").mkdirs();
+        new File("C:\\TempFiles\\posting").mkdirs();
+        new File("C:\\TempFiles\\docs").mkdirs();
+        new File("C:\\TempFiles\\city").mkdirs();
+        new File("C:\\TempFiles\\languages").mkdirs();
+        new File("C:\\TempFiles\\DocTF").mkdirs();
         Indexer.index = 0;
         Indexer.numOfDocs = 0;
         Indexer.numOfTerms = 0;
@@ -114,10 +123,58 @@ public class SearchEngine {
     public double start() {
         long StartTime = System.nanoTime();
         dictionary = readFile.read();
+        calcTFIDF();
+        try {
+            FileUtils.deleteDirectory(new File("C:\\TempFiles"));
+        }catch (Exception e) { e.printStackTrace(); }
         long EndTime = System.nanoTime();
         double totalTime = (EndTime - StartTime)/1000000000.0;
         return totalTime;
     }
+
+    private void calcTFIDF() {
+        int numOfDocs = readFile.numOfDocs;
+        try {
+            FileWriter fw = new FileWriter(postingPath+"\\TFIDF.txt", true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            FileReader fr = new FileReader("C:\\TempFiles\\DocTF\\docTF.txt");
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            while(line != null){
+                String[] split = line.split(":");
+                //PUT A BREAKPOINT WHEN SPLIT LENGTH == 1
+                String docno = split[0];
+                bw.write(docno+":");
+                String[] docTerms = split[1].split("~");
+                for (int i = 0; i < docTerms.length; i++){
+                    if (!docTerms[i].equals("")) {
+                        String[] split2 = docTerms[i].split("\\*");
+                        String term = split2[0];
+                        String tfstr = split2[1];
+                        Term t = null;
+                        if (dictionary.containsKey(term))
+                            t = dictionary.get(term);
+                        else if (dictionary.containsKey(term.toLowerCase()))
+                            t = dictionary.get(term.toLowerCase());
+                        else
+                            t = dictionary.get(term.toUpperCase());
+                        if (t==null)
+                            continue;
+                        int tf = Integer.parseInt(tfstr);
+                        double idf = Math.log(numOfDocs / t.docFreq);
+                        double tfidf = tf * idf;
+                        bw.write(term + "*" + DoubleRounder.round(tfidf, 4) + "~");
+                    }
+                }
+                bw.newLine();
+                line = br.readLine();
+            }
+            bw.flush();
+            fw.close();
+            fr.close();
+        }catch (Exception e) { e.printStackTrace(); }
+    }
+
 
     /**
      *
@@ -151,6 +208,15 @@ public class SearchEngine {
                 e.printStackTrace();
             }
         }
+    }
+
+
+    public void RunMultipleQueries(String queryFilePath) {
+        searcher.runQueries(queryFilePath);
+    }
+
+    public void RunSingleQuery(String query) {
+        searcher.runQuery(query);
     }
 
     /**
