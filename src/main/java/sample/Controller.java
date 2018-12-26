@@ -19,9 +19,12 @@ public class Controller {
         se = new SearchEngine();
     }
 
-    public double startSE(String path, String postPath, boolean stem) {
-        se.setProps(path,postPath,stem);
+    public double startSE() {
         return se.start();
+    }
+
+    public void setProperties(String path, String postPath, boolean stem){
+        se.setProps(path,postPath,stem);
     }
 
     public int getNumOfTerms(){

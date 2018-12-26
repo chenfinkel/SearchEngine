@@ -19,7 +19,7 @@ public class ReadThread extends Thread {
 
     /** empty constructor */
     public ReadThread(){
-        parser = new Parse();
+
     }
 
     /** constructor */
@@ -41,6 +41,7 @@ public class ReadThread extends Thread {
             for (int i = 0; i < docs.length; i++) {
                 String docID = StringUtils.substringBetween(docs[i], "<DOCNO>", "</DOCNO>");
                 docID = removeSpaces(docID);
+                Document doc = new Document(docID);
                 String city = StringUtils.substringBetween(docs[i],"<F P=104>", "</F>");
                 city = removeSpaces(city);
                 if(Character.isLetter(city.charAt(0))) {
@@ -51,8 +52,10 @@ public class ReadThread extends Thread {
                 }
                 else
                     city = "X";
+                doc.setCity(city);
                 String date = StringUtils.substringBetween(docs[i],"<DATE1>", " </DATE1>");
                 date = removeSpaces(date);
+                doc.setDate(date);
                 String language = StringUtils.substringBetween(docs[i],"<F P=105>", " </F>");
                 language = removeSpaces(language);
                 char langfirst = language.charAt(0);
@@ -62,15 +65,17 @@ public class ReadThread extends Thread {
                         language = langWords[0];
                 } else
                     language = "X";
+                doc.setLanguage(language);
                 String[] textsInDoc = StringUtils.substringsBetween(docs[i], "<TEXT>", "</TEXT>");
                 if (textsInDoc != null) {
                     for (int j = 0; j < textsInDoc.length; j++) {
                         String textToParse = textsInDoc[j];
-                        parser.ParseDoc(textToParse, docID, city, date, language, stem);
+                        doc.setText(textToParse);
+                        parser.parseDocument(doc, stem);
                     }
                 }
             }
-            parser.ParseDoc("index", "index", "", "", "", stem);
+            parser.doneParsing();
         }catch (IOException e) { e.printStackTrace(); }
     }
 

@@ -43,6 +43,10 @@ public class View {
     public TextField queryFile;
     @FXML
     public TextField singleQry;
+    @FXML
+    public CheckBox stemQry;
+    @FXML
+    public Button run;
 
     public View() {
         control = new Controller();
@@ -53,11 +57,22 @@ public class View {
         control = c;
     }
 
+    public void setProperties(){
+        control.resetSE();
+        if (!Posting.getText().equals("") && !Corpus.getText().equals("")) {
+            control.setProperties(Corpus.getText(), Posting.getText(), stemming.isSelected());
+            startBtn.setDisable(false);
+            loadDict.setDisable(false);
+        } else {
+            Alert a = new Alert(Alert.AlertType.INFORMATION);
+            a.setContentText("YOU MUST ENTER CORPUS AND POSTING PATHS!");
+            a.show();
+        }
+    }
+
     public void Start() {
         if (!Posting.getText().equals("") && !Corpus.getText().equals("")) {
-            resetBtn.setDisable(false);
-            control.resetSE();
-            double time = control.startSE(Corpus.getText(), Posting.getText(), stemming.isSelected());
+            double time = control.startSE();
             LinkedHashSet<String> lang = control.getLanguage();
             languages.setItems(FXCollections.observableArrayList(lang));
             int terms = control.getNumOfTerms();
@@ -71,6 +86,11 @@ public class View {
             Scene dialogScene = new Scene(dialogVbox, 300, 300);
             dialog.setScene(dialogScene);
             dialog.show();
+            startBtn.setDisable(true);
+            loadDict.setDisable(true);
+            showDict.setDisable(false);
+            run.setDisable(false);
+            resetBtn.setDisable(false);
 
         } else {
             Alert a = new Alert(Alert.AlertType.INFORMATION);
@@ -121,6 +141,9 @@ public class View {
         boolean stem = stemming.isSelected();
         if (!path.equals(""))
             control.loadDict(path, stem);
+        showDict.setDisable(false);
+        run.setDisable(false);
+        resetBtn.setDisable(false);
     }
 
     public void BrowseQueries(){
@@ -143,6 +166,7 @@ public class View {
             a.setContentText("YOU MUST ENTER A QUERY OR A QUERIES FILE!");
             a.show();
         } else {
+            Boolean stem = stemQry.isSelected();
             if (!query.equals(""))
                 control.RunSingleQuery(query);
             else

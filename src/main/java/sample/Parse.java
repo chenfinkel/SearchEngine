@@ -33,24 +33,13 @@ public class Parse {
         this.stopWordsPath = stopWordsPath;
     }
 
-    /**
-     * parses a text and sends it to the indexer
-     * @param text is the document text
-     * @param docID is the id of the document
-     */
-    public void ParseDoc(String text, String docID, String city, String date, String language, boolean stem) {
-        if(text.equals("index") || text.equals("done")) {
-            idxr.Index(null, docID, city, date, language);
-            return;
-        }
+    private LinkedHashMap<String, Integer> Parse(String text, boolean stem) {
         docTerms = new LinkedHashMap<>();
         ArrayList<String> list = tokenize(text);
         String currToken = "";
         String nextToken = "";
         String newToken = "";
-        Term t = null;
         for(int i = 0 ; i < list.size() ; i++) {
-            int j = i;
             currToken = list.get(i);
             if (i != list.size() -1)
                 nextToken = list.get(i+1);
@@ -160,7 +149,20 @@ public class Parse {
                 it.remove();
             }
         }
-       idxr.Index(docTerms, docID, city, date, language);
+       return docTerms;
+    }
+
+    public void doneParsing(){
+        idxr.Index();
+    }
+
+    public void parseDocument(Document doc, boolean stem){
+        Parse(doc.getText(), stem);
+        idxr.saveDetails(docTerms, doc);
+    }
+
+    public LinkedHashMap<String, Integer> parseQuery(String query, boolean stem){
+        return Parse(query, stem);
     }
 
     private String cleanTerm(String s) {
