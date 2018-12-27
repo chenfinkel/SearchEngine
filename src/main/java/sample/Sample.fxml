@@ -10,7 +10,7 @@
 <?import javafx.scene.shape.Line?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="641.0" prefWidth="697.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.View">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="641.0" prefWidth="697.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.View">
    <children>
       <TextField fx:id="Corpus" layoutX="243.0" layoutY="100.0" promptText="Corpus path" />
       <TextField fx:id="Posting" layoutX="243.0" layoutY="132.0" promptText="Posting path" />
@@ -30,7 +30,7 @@
       <Line endX="100.0" endY="-18.0" layoutX="-63.0" layoutY="304.0" startX="724.0" startY="-18.0" />
       <TextField fx:id="singleQry" layoutX="68.0" layoutY="417.0" promptText="Query" />
       <TextField fx:id="queryFile" layoutX="68.0" layoutY="475.0" promptText="Queries File" />
-      <Button fx:id="browseQueries" disable="true" layoutX="228.0" layoutY="417.0" mnemonicParsing="false" onAction="#BrowseQueries" text="Browse" />
+      <Button fx:id="browseQueries" disable="true" layoutX="228.0" layoutY="476.0" mnemonicParsing="false" onAction="#BrowseQueries" text="Browse" />
       <Button fx:id="run" disable="true" layoutX="526.0" layoutY="438.0" mnemonicParsing="false" onAction="#Run" prefHeight="25.0" prefWidth="99.0" text="RUN" />
       <CheckBox fx:id="semantic" layoutX="329.0" layoutY="479.0" mnemonicParsing="false" text="Semantic Improvement?" />
       <Label layoutX="329.0" layoutY="395.0" prefHeight="17.0" prefWidth="109.0" text="Filter by city:" />

@@ -2,6 +2,8 @@ package sample;
 
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ScrollBar;
@@ -9,6 +11,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
@@ -50,6 +53,8 @@ public class View {
     public CheckBox stemQry;
     @FXML
     public Button run;
+    @FXML
+    public Button browseQueries;
 
     public View() {
         control = new Controller();
@@ -94,6 +99,7 @@ public class View {
             showDict.setDisable(false);
             run.setDisable(false);
             resetBtn.setDisable(false);
+            browseQueries.setDisable(false);
 
         } else {
             Alert a = new Alert(Alert.AlertType.INFORMATION);
@@ -121,6 +127,12 @@ public class View {
     public void Reset() {
         control.Reset();
         startBtn.setDisable(false);
+        resetBtn.setDisable(true);
+        loadDict.setDisable(false);
+        browseQueries.setDisable(true);
+        showDict.setDisable(true);
+        Posting.setText("");
+        Corpus.setText("");
     }
 
     public void showDict() {
@@ -144,15 +156,21 @@ public class View {
         boolean stem = stemming.isSelected();
         if (!path.equals(""))
             control.loadDict(path, stem);
+
         showDict.setDisable(false);
         run.setDisable(false);
         resetBtn.setDisable(false);
+        browseQueries.setDisable(false);
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setContentText("Dictionary loaded successfuly");
+        a.show();
     }
 
     public void BrowseQueries(){
-        DirectoryChooser dc = new DirectoryChooser();
-        dc.setTitle("Choose Queries Path");
-        File f = dc.showDialog(stage);
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose Queries Path");
+        File f = fc.showOpenDialog(stage);
+        //showDialog(stage);
         if (f != null)
             queryFile.setText(f.getPath());
     }
@@ -170,13 +188,32 @@ public class View {
             a.setContentText("YOU MUST ENTER A QUERY OR A QUERIES FILE!");
             a.show();
         } else {
-            Boolean stem = stemQry.isSelected();
+            Boolean stem = stemming.isSelected();
+            long StartTime = System.nanoTime();
             if (!query.equals(""))
                 results = control.RunSingleQuery(query);
             else
                 results = control.RunMultipleQueries(queriesFile);
+            long EndTime = System.nanoTime();
+            double totalTime = (EndTime - StartTime)/1000000000.0;
+            System.out.println("search time: " + totalTime);
+            showResults(results);
         }
 
 
+    }
+
+    private void showResults(List<QueryResult> results){
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("results.fxml"));
+            Parent root1 = fxmlLoader.load();
+            ResultsView viewControl = fxmlLoader.getController();
+            viewControl.setView(this);
+            viewControl.setResults(results);
+            Stage stage = new Stage();
+            stage.setScene(new Scene(root1));
+            stage.setTitle("Results");
+            stage.show();
+        }catch (Exception e) { e.printStackTrace(); }
     }
 }

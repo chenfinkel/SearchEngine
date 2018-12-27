@@ -45,4 +45,8 @@ public class Term implements Serializable{
 
     /** increase term frequency */
     public void increaseTF() { termFreq++; }
+
+    public String getId() {
+        return id;
+    }
 }

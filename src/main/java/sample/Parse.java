@@ -23,14 +23,9 @@ public class Parse {
     private Stemmer stemmer;
 
     /**  empty constructor */
-    public Parse() {
+    public Parse(){
         idxr = new Indexer();
-    }
-
-    /**  constructor */
-    public Parse(String stopWordsPath){
-        idxr = new Indexer();
-        this.stopWordsPath = stopWordsPath;
+        this.stopWordsPath = SearchEngine.corpusPath+"\\stop_words.txt";
     }
 
     private LinkedHashMap<String, Integer> Parse(String text) {
@@ -138,8 +133,10 @@ public class Parse {
             }
             if (!docTerms.containsKey(newToken))
                 docTerms.put(newToken, 1);
-            int frequency = docTerms.get(newToken);
-            docTerms.put(newToken, frequency+1);
+            else {
+                int frequency = docTerms.get(newToken);
+                docTerms.put(newToken, frequency + 1);
+            }
         }
         HashSet<String> stopWords = getStopWords();
         Iterator it = docTerms.keySet().iterator();
@@ -161,7 +158,7 @@ public class Parse {
         idxr.saveDetails(docTerms, doc);
     }
 
-    public LinkedHashMap<String, Integer> parseQuery(String query, boolean stem){
+    public LinkedHashMap<String, Integer> parseQuery(String query){
         return Parse(query);
     }
 
@@ -384,7 +381,7 @@ public class Parse {
         finalText = "";
         for(int i = 0; i < splitByDashDash.length; i++)
             finalText = finalText + splitByDashDash[i] + "~";
-        StringTokenizer st = new StringTokenizer(finalText, "~:/`*\n!;+&|'\\() []{}?\"");
+        StringTokenizer st = new StringTokenizer(finalText, "~:/`*\n!;+&|'\\()# []{}?\"");
         ArrayList<String> list = new ArrayList<>();
         while (st.hasMoreTokens()) {
             String s = st.nextToken();

@@ -28,15 +28,13 @@ public class Searcher {
     public void runQueries(String queriesPath) {
         try {
             File file = new File(queriesPath);
-            Parse parser = new Parse();
             String fileBody = FileUtils.readFileToString(file);
             String[] QueryList = StringUtils.substringsBetween(fileBody, "<top>", "</top>");
             for(int i = 0; i < QueryList.length; i++) {
                 String num = StringUtils.substringBetween(QueryList[i], "<num> Number: ", System.lineSeparator());
                 String title = StringUtils.substringBetween(QueryList[i], "<title> ", System.lineSeparator());
-                LinkedHashMap<String, Integer> queryTerms = parser.parseQuery(title, SearchEngine.stem);
                 QueryResult qr = new QueryResult(num);
-                qr.setDocuments(ranker.Rank(num, title));
+                qr.setDocuments(ranker.Rank(title));
                 results.add(qr);
             }
         } catch(Exception e) { e.printStackTrace(); };
@@ -45,7 +43,7 @@ public class Searcher {
 
     public void runQuery(String query) {
         QueryResult qr = new QueryResult("");
-        qr.setDocuments(ranker.Rank(null, query));
+        qr.setDocuments(ranker.Rank(query));
         results.add(qr);
     }
 

@@ -22,7 +22,7 @@ public class ReadThread extends Thread {
 
     /** constructor */
     public ReadThread(File folder){
-        parser = new Parse(SearchEngine.corpusPath + "\\stop_words.txt");
+        parser = new Parse();
         this.folder = folder;
     }
 

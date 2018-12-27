@@ -77,6 +77,7 @@ public class SearchEngine {
     public void loadDict(String path, boolean stem){
         loadDictionary(path,stem);
         loadDocs(path,stem);
+        searcher = new Searcher();
     }
 
     private void loadDocs(String path, boolean stem){
