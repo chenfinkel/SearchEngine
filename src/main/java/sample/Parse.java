@@ -33,7 +33,7 @@ public class Parse {
         this.stopWordsPath = stopWordsPath;
     }
 
-    private LinkedHashMap<String, Integer> Parse(String text, boolean stem) {
+    private LinkedHashMap<String, Integer> Parse(String text) {
         docTerms = new LinkedHashMap<>();
         ArrayList<String> list = tokenize(text);
         String currToken = "";
@@ -129,7 +129,7 @@ public class Parse {
                 }
             } else {
                 newToken = currToken;
-                if (stem){
+                if (SearchEngine.stem){
                     stemmer = new Stemmer();
                     stemmer.add(currToken.toCharArray(), currToken.length());
                     stemmer.stem();
@@ -156,13 +156,13 @@ public class Parse {
         idxr.Index();
     }
 
-    public void parseDocument(Document doc, boolean stem){
-        Parse(doc.getText(), stem);
+    public void parseDocument(Document doc){
+        Parse(doc.getText());
         idxr.saveDetails(docTerms, doc);
     }
 
     public LinkedHashMap<String, Integer> parseQuery(String query, boolean stem){
-        return Parse(query, stem);
+        return Parse(query);
     }
 
     private String cleanTerm(String s) {

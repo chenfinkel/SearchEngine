@@ -14,8 +14,6 @@ public class ReadThread extends Thread {
     /** the folder to parse */
     private File folder;
 
-    /** stemming flag */
-    private boolean stem;
 
     /** empty constructor */
     public ReadThread(){
@@ -23,9 +21,8 @@ public class ReadThread extends Thread {
     }
 
     /** constructor */
-    public ReadThread(File folder, String corpusPath, String postPath, boolean stem){
-        parser = new Parse(corpusPath + "\\stop_words.txt");
-        this.stem = stem;
+    public ReadThread(File folder){
+        parser = new Parse(SearchEngine.corpusPath + "\\stop_words.txt");
         this.folder = folder;
     }
 
@@ -71,7 +68,7 @@ public class ReadThread extends Thread {
                     for (int j = 0; j < textsInDoc.length; j++) {
                         String textToParse = textsInDoc[j];
                         doc.setText(textToParse);
-                        parser.parseDocument(doc, stem);
+                        parser.parseDocument(doc);
                     }
                 }
             }

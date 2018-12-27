@@ -8,27 +8,30 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** This class represents a search engine */
 
 public class SearchEngine {
 
     /** the location of the corpus */
-    private String corpusPath;
+    public static String corpusPath;
 
     /** the path where the index files will be saved */
-    private String postingPath;
+    public static String postingPath;
 
-    /** indicates if the parsing process is done with stemming or not */
-    private boolean stem;
+    /** indicates if the process is done with stemming or not */
+    public static boolean stem;
 
     /** reads the corpus */
     private ReadFile readFile;
 
     /** the dictionary of the search engine after prasing and indexing */
-    public LinkedHashMap<String, Term> dictionary;
+    public static ConcurrentHashMap<String, Term> dictionary;
 
-    public LinkedHashMap<String, Document> documents;
+    public static ConcurrentHashMap<String, Document> documents;
+
+    public static ConcurrentHashMap<String, String> languages;
 
     /** the searcher of the engine */
     private Searcher searcher;
@@ -41,9 +44,10 @@ public class SearchEngine {
         new File("C:\\TempFiles\\city").mkdirs();
         new File("C:\\TempFiles\\languages").mkdirs();
         new File("C:\\TempFiles\\DocTF").mkdirs();
+        documents = new ConcurrentHashMap<>();
+        dictionary = new ConcurrentHashMap<>();
+        languages = new ConcurrentHashMap<>();
         Indexer.index = 0;
-        Indexer.numOfDocs = 0;
-        Indexer.numOfTerms = 0;
     }
 
     /** set the properties for the search engine
@@ -55,9 +59,8 @@ public class SearchEngine {
     public void setProps(String cp, String pp, boolean stem) {
         corpusPath = cp;
         postingPath = pp;
-        this.stem = stem;
+        SearchEngine.stem = stem;
         readFile = new ReadFile(cp, pp, stem);
-        searcher = new Searcher(pp,cp,documents);
 
     }
 
@@ -78,7 +81,6 @@ public class SearchEngine {
 
     private void loadDocs(String path, boolean stem){
         try {
-            documents = new LinkedHashMap<>();
             if (stem)
                 path = path + "\\stemmed";
             FileReader fr = new FileReader(path + "\\docs.txt");
@@ -104,7 +106,7 @@ public class SearchEngine {
 
     private void loadDictionary(String path, boolean stem){
         try {
-            dictionary = new LinkedHashMap<>();
+            dictionary = new ConcurrentHashMap<>();
             if (stem)
                 path = path + "\\stemmed";
             FileReader fr = new FileReader(path + "\\dictionary.txt");
@@ -128,8 +130,8 @@ public class SearchEngine {
      *
      * @return a list of the languages of the files
      */
-    public LinkedHashSet<String> getLanguage(){
-        return readFile.language;
+    public ConcurrentHashMap<String, String> getLanguage(){
+        return languages;
     }
 
     /**
@@ -156,12 +158,13 @@ public class SearchEngine {
      */
     public double start() {
         long StartTime = System.nanoTime();
-        dictionary = readFile.read();
+        readFile.read();
         try {
             FileUtils.deleteDirectory(new File("C:\\TempFiles"));
         }catch (Exception e) { e.printStackTrace(); }
         long EndTime = System.nanoTime();
         double totalTime = (EndTime - StartTime)/1000000000.0;
+        searcher = new Searcher();
         return totalTime;
     }
 
@@ -170,7 +173,7 @@ public class SearchEngine {
      * @return the total number of unique terms in the corpus
      */
     public int getNumOfTerms(){
-        return readFile.numOfTerms;
+        return dictionary.size();
     }
 
     /**
@@ -178,7 +181,7 @@ public class SearchEngine {
      * @return the total number of documents in the corpus
      */
     public int getNumOfDocs(){
-        return readFile.numOfDocs;
+        return documents.size();
     }
 
     /**
@@ -200,12 +203,14 @@ public class SearchEngine {
     }
 
 
-    public void RunMultipleQueries(String queryFilePath) {
-        searcher.runQueries(dictionary, documents, queryFilePath, stem);
+    public List<QueryResult> RunMultipleQueries(String queryFilePath) {
+        searcher.runQueries(queryFilePath);
+        return searcher.getResults();
     }
 
-    public void RunSingleQuery(String query) {
-        searcher.runQuery(dictionary, documents, query, stem);
+    public List<QueryResult> RunSingleQuery(String query) {
+        searcher.runQuery(query);
+        return searcher.getResults();
     }
 
     /**
@@ -216,14 +221,6 @@ public class SearchEngine {
             String s1 = (String) o1;
             String s2 = (String) o2;
             return s1.toLowerCase().compareTo(s2.toLowerCase());
-        }
-    }
-
-    public class SortByTF implements Comparator<Object> {
-        public int compare(Object o1, Object o2) {
-            int tf1 = ((Term)o1).termFreq;
-            int tf2 = ((Term)o2).termFreq;
-            return tf1-tf2;
         }
     }
 }

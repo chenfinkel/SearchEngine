@@ -9,6 +9,7 @@ import sun.awt.Mutex;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -69,15 +70,15 @@ public class mergeThread extends Thread{
                 size = files.length;
             }
             if (file.equals("languages")){
-                LinkedHashSet<String> languages = new LinkedHashSet<>();
+                LinkedHashMap<String, String> languages = new LinkedHashMap<>();
                 FileReader fr = new FileReader(postPath + "\\languages.txt");
                 BufferedReader br = new BufferedReader(fr);
                 String line = br.readLine();
                 while (line != null) {
-                    languages.add(line);
+                    languages.put(line, line);
                     line = br.readLine();
                 }
-                indexer.FinalLanguage = languages;
+                SearchEngine.languages.putAll(languages);
                 fr.close();
             }
         } catch (Exception e) {

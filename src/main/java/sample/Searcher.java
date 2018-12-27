@@ -12,30 +12,20 @@ public class Searcher {
 
     private Ranker ranker;
 
-    private String postingPath;
-
-    private String corpusPath;
-
-    private double avdl;
-
-    private LinkedHashMap<String, Document> documents;
-
 
     /** First string is the number of the query, and the second string is for the format for the trec Evel*/
-    private HashMap<String, String> RelevantDoc = new HashMap<>();
+    //private HashSet<QueryResult> RelevantDoc = new HashSet<>();
 
-    /** for single query only*/
-    private HashSet<String> relevDocs = new HashSet<>();
 
-    public Searcher(String postingPath, String corpusPath, LinkedHashMap<String, Document> documents){
-        this.postingPath = postingPath;
-        this.corpusPath = corpusPath;
-        this.documents = documents;
-        avdl = calcAVDL();
-        ranker = new Ranker(postingPath, corpusPath);
+    private List<QueryResult> results;
+
+    public Searcher(){
+        double avdl = calcAVDL();
+        ranker = new Ranker(avdl);
+        results = new ArrayList<>();
     }
 
-    public void runQueries(LinkedHashMap<String, Term> dictionary, String queriesPath, boolean stem) {
+    public void runQueries(String queriesPath) {
         try {
             File file = new File(queriesPath);
             Parse parser = new Parse();
@@ -44,30 +34,32 @@ public class Searcher {
             for(int i = 0; i < QueryList.length; i++) {
                 String num = StringUtils.substringBetween(QueryList[i], "<num> Number: ", System.lineSeparator());
                 String title = StringUtils.substringBetween(QueryList[i], "<title> ", System.lineSeparator());
-                LinkedHashMap<String, Integer> queryTerms = parser.parseQuery(title, stem);
-                RelevantDoc.putAll(ranker.Rank(dictionary, documents, num, title, stem));
+                LinkedHashMap<String, Integer> queryTerms = parser.parseQuery(title, SearchEngine.stem);
+                QueryResult qr = new QueryResult(num);
+                qr.setDocuments(ranker.Rank(num, title));
+                results.add(qr);
             }
         } catch(Exception e) { e.printStackTrace(); };
     }
 
-    private String removeStopWords(String title) {
-        return"";
-    }
 
-    public void runQuery(LinkedHashMap<String, Term> dictionary, LinkedHashMap<String, Document> documents, String query, boolean stem) {
-
-        relevDocs.addAll(ranker.Rank(dictionary, documents,null, query, stem).values());
+    public void runQuery(String query) {
+        QueryResult qr = new QueryResult("");
+        qr.setDocuments(ranker.Rank(null, query));
+        results.add(qr);
     }
 
     private double calcAVDL() {
-        Iterator it = documents.values().iterator();
+        Iterator<Document> it = SearchEngine.documents.values().iterator();
         int sum = 0;
         while (it.hasNext()) {
-            sum = sum + ((Document)it.next()).getSize();
+            sum = sum + it.next().getSize();
         }
-        return sum/documents.size();
+        int size = SearchEngine.documents.size();
+        return sum/size;
     }
 
-
-
+    public List<QueryResult> getResults() {
+        return results;
+    }
 }

@@ -3,7 +3,10 @@ package sample;
 import javafx.scene.control.Alert;
 
 import java.awt.event.ActionEvent;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Controller {
     private SearchEngine se;
@@ -47,25 +50,23 @@ public class Controller {
         se.loadDict(path, stem);
     }
 
-    public LinkedHashSet<String> getLanguage(){
+    public ConcurrentHashMap<String, String> getLanguage(){
         return se.getLanguage();
     }
 
     public void Reset() {
         if(se.getPostingPath() != null)
             se.Reset();
-        Indexer.numOfTerms = 0;
-        Indexer.numOfDocs = 0;
         Indexer.index = 0;
         se = new SearchEngine();
     }
 
 
-    public void RunSingleQuery(String query) {
-        se.RunSingleQuery(query);
+    public List<QueryResult> RunSingleQuery(String query) {
+        return se.RunSingleQuery(query);
     }
 
-    public void RunMultipleQueries(String queryFilePath) {
-        se.RunMultipleQueries(queryFilePath);
+    public List<QueryResult> RunMultipleQueries(String queryFilePath) {
+        return se.RunMultipleQueries(queryFilePath);
     }
 }

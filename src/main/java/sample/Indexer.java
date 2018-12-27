@@ -6,6 +6,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -25,30 +26,11 @@ public class Indexer {
      */
     public static Mutex m = new Mutex();
 
-    /**
-     * mutex for number of documents
-     */
-    public static Mutex numOfDocsMutex = new Mutex();
-
-    /**
-     * mutex for number of terms
-     */
-    public static Mutex numOfTermsMutex = new Mutex();
 
     /**
      * the id of the file
      */
     private int fileIndex;
-
-    /**
-     * number of total documents
-     */
-    public static int numOfDocs;
-
-    /**
-     * number of total unique terms
-     */
-    public static int numOfTerms;
 
     /**
      * maps a term to the documents it appeared in
@@ -64,12 +46,6 @@ public class Indexer {
      * a list of documents
      */
     private LinkedHashSet<String> docs;
-
-    private LinkedHashMap<String, Document> docsMap;
-    /**
-     * the dictionary for the terms
-     */
-    public LinkedHashMap<String, Term> dictionary;
 
     /**
      * a list of the cities of the documents
@@ -87,18 +63,12 @@ public class Indexer {
     private String postPath;
 
     /**
-     * a final list the languages
-     */
-    public static LinkedHashSet<String> FinalLanguage;
-
-    /**
      * empty constructor
      */
     public Indexer() {
         terms = new LinkedHashMap<>();
         termsDocs = new LinkedHashMap<>();
         docs = new LinkedHashSet<>();
-        docsMap = new LinkedHashMap<>();
         cities = new LinkedHashSet<>();
         languages = new LinkedHashSet<>();
         m.lock();
@@ -109,8 +79,6 @@ public class Indexer {
 
     /**
      * this method saves the terms and documents, until the parser tell it to index a temporary posting file
-     *
-     *
      */
     public void Index() {
         try {
@@ -170,11 +138,8 @@ public class Indexer {
             insert(termString, docTermFreq, DocID);
         }
         Document d = new Document(DocID,maxTF,docTerms.size(),doc.getDate(),city,language,docSize);
-        docsMap.put(DocID, d);
+        SearchEngine.documents.put(DocID, d);
         docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + doc.getDate() + "~" + city + "~" + language + "~" + docSize);
-        numOfDocsMutex.lock();
-        numOfDocs++;
-        numOfDocsMutex.unlock();
     }
 
     private void insert(String termString, int docTermFreq, String DocID) {
@@ -232,15 +197,13 @@ public class Indexer {
     /**
      * merge all temorary posting files
      *
-     * @param path the location of the index
-     * @param stem if stemming was done
      */
-    public void Merge(String path, boolean stem) {
-        if (stem) {
-            postPath = path + "\\stemmed";
+    public void Merge() {
+        if (SearchEngine.stem) {
+            postPath = SearchEngine.postingPath + "\\stemmed";
             new File(postPath).mkdirs();
         } else
-            postPath = path;
+            postPath = SearchEngine.postingPath;
         ExecutorService exeServ = Executors.newFixedThreadPool(3);
         exeServ.submit(new mergeThread("docs", postPath, this));
         exeServ.submit(new mergeThread("city", postPath, this));
@@ -387,7 +350,7 @@ public class Indexer {
                     String term = line.split("~")[0];
                     bw.write(line);
                     bw.newLine();
-                    dictionary.get(term).postingLine = lineNum;
+                    SearchEngine.dictionary.get(term).postingLine = lineNum;
                     line = br.readLine();
                     if (line == null)
                         break;
@@ -405,20 +368,17 @@ public class Indexer {
 
     private void createDictionary(String path) {
         try {
-            dictionary = new LinkedHashMap<>();
+            SearchEngine.dictionary = new ConcurrentHashMap<>();
             FileReader fr = new FileReader(path);
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
             while (line != null) {
-                numOfTermsMutex.lock();
-                numOfTerms++;
-                numOfTermsMutex.unlock();
                 String[] split = line.split("~");
                 String term = split[0];
                 Term t = new Term(term);
                 t.termFreq = Integer.parseInt(split[1]);
                 t.docFreq = Integer.parseInt(split[2].split("#")[0]);
-                dictionary.put(term, t);
+                SearchEngine.dictionary.put(term, t);
                 line = br.readLine();
             }
             fr.close();
@@ -432,11 +392,11 @@ public class Indexer {
             FileWriter fw = new FileWriter(postPath + "\\dictionary.txt", true);
             BufferedWriter bw = new BufferedWriter(fw);
             List<String> sorted = new ArrayList<>();
-            sorted.addAll(dictionary.keySet());
+            sorted.addAll(SearchEngine.dictionary.keySet());
             Collections.sort(sorted, new Indexer.SortIgnoreCase());
             for (int i = 0; i < sorted.size(); i++) {
                 String term = sorted.get(i);
-                Term t = dictionary.get(term);
+                Term t = SearchEngine.dictionary.get(term);
                 bw.write(term + "#" + t.termFreq + "#" + t.docFreq + "#" + t.postingLine);
                 bw.newLine();
             }

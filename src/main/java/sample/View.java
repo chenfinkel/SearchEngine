@@ -13,7 +13,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
 import java.io.File;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class View {
     private Controller control;
@@ -73,8 +76,8 @@ public class View {
     public void Start() {
         if (!Posting.getText().equals("") && !Corpus.getText().equals("")) {
             double time = control.startSE();
-            LinkedHashSet<String> lang = control.getLanguage();
-            languages.setItems(FXCollections.observableArrayList(lang));
+            ConcurrentHashMap<String, String> lang = control.getLanguage();
+            languages.setItems(FXCollections.observableArrayList(lang.keySet()));
             int terms = control.getNumOfTerms();
             int docs = control.getNumOfDocs();
             final Stage dialog = new Stage();
@@ -159,6 +162,7 @@ public class View {
     }
 
     public void Run(){
+        List<QueryResult> results;
         String queriesFile = queryFile.getText();
         String query = singleQry.getText();
         if ((queriesFile.equals("") && query.equals("")) ||(!queriesFile.equals("") && !query.equals(""))) {
@@ -168,10 +172,11 @@ public class View {
         } else {
             Boolean stem = stemQry.isSelected();
             if (!query.equals(""))
-                control.RunSingleQuery(query);
+                results = control.RunSingleQuery(query);
             else
-                control.RunMultipleQueries(queriesFile);
+                results = control.RunMultipleQueries(queriesFile);
         }
+
 
     }
 }
