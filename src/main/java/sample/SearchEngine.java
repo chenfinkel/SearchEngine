@@ -28,6 +28,8 @@ public class SearchEngine {
     /** the dictionary of the search engine after prasing and indexing */
     public LinkedHashMap<String, Term> dictionary;
 
+    public LinkedHashMap<String, Document> documents;
+
     /** the searcher of the engine */
     private Searcher searcher;
 
@@ -55,7 +57,7 @@ public class SearchEngine {
         postingPath = pp;
         this.stem = stem;
         readFile = new ReadFile(cp, pp, stem);
-        searcher = new Searcher(pp,cp);
+        searcher = new Searcher(pp,cp,documents);
 
     }
 
@@ -70,6 +72,37 @@ public class SearchEngine {
      * @param stem - is stemmed or not
      */
     public void loadDict(String path, boolean stem){
+        loadDictionary(path,stem);
+        loadDocs(path,stem);
+    }
+
+    private void loadDocs(String path, boolean stem){
+        try {
+            documents = new LinkedHashMap<>();
+            if (stem)
+                path = path + "\\stemmed";
+            FileReader fr = new FileReader(path + "\\docs.txt");
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            String s = "";
+            while (line != null){
+                String[] docDetails = line.split("~");
+                String docID = docDetails[0];
+                int maxTF = Integer.parseInt(docDetails[1]);
+                int uniqueTerms = Integer.parseInt(docDetails[2]);
+                String date = docDetails[3];
+                String city = docDetails[4];
+                String language = docDetails[5];
+                int size = Integer.parseInt(docDetails[6]);
+                Document d = new Document(docID,maxTF,uniqueTerms,date,city,language,size);
+                documents.put(docID, d);
+                line = br.readLine();
+            }
+            fr.close();
+        }catch (Exception e) { e.printStackTrace(); }
+    }
+
+    private void loadDictionary(String path, boolean stem){
         try {
             dictionary = new LinkedHashMap<>();
             if (stem)
@@ -168,11 +201,11 @@ public class SearchEngine {
 
 
     public void RunMultipleQueries(String queryFilePath) {
-        searcher.runQueries(dictionary, queryFilePath, stem);
+        searcher.runQueries(dictionary, documents, queryFilePath, stem);
     }
 
     public void RunSingleQuery(String query) {
-        searcher.runQuery(dictionary, query, stem);
+        searcher.runQuery(dictionary, documents, query, stem);
     }
 
     /**

@@ -65,6 +65,7 @@ public class Indexer {
      */
     private LinkedHashSet<String> docs;
 
+    private LinkedHashMap<String, Document> docsMap;
     /**
      * the dictionary for the terms
      */
@@ -97,6 +98,7 @@ public class Indexer {
         terms = new LinkedHashMap<>();
         termsDocs = new LinkedHashMap<>();
         docs = new LinkedHashSet<>();
+        docsMap = new LinkedHashMap<>();
         cities = new LinkedHashSet<>();
         languages = new LinkedHashSet<>();
         m.lock();
@@ -157,16 +159,19 @@ public class Indexer {
         String language = doc.getLanguage();
         if (!language.equals("X"))
             languages.add(language);
-        int maxTF = 0;
+        int maxTF = 0, docSize = 0;
         Iterator it = docTerms.keySet().iterator();
         while (it.hasNext()) {
             String termString = (String) it.next();
             int docTermFreq = docTerms.get(termString);
+            docSize = docSize + docTermFreq;
             if (docTermFreq > maxTF)
                 maxTF = docTermFreq;
             insert(termString, docTermFreq, DocID);
         }
-        docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + doc.getDate() + "~" + city + "~" + language);
+        Document d = new Document(DocID,maxTF,docTerms.size(),doc.getDate(),city,language,docSize);
+        docsMap.put(DocID, d);
+        docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + doc.getDate() + "~" + city + "~" + language + "~" + docSize);
         numOfDocsMutex.lock();
         numOfDocs++;
         numOfDocsMutex.unlock();
