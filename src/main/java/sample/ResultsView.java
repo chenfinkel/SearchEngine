@@ -12,6 +12,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class ResultsView {
@@ -32,8 +33,15 @@ public class ResultsView {
             resultLines.add("No documents found!");
         }
         else {
-            for (int i = 0; i < res.size(); i++)
-                resultLines.add(res.get(i).toString());
+            for (int i = 0; i < res.size(); i++) {
+                QueryResult qr = res.get(i);
+                String s = "Query: " + qr.getQueryNumber() + System.lineSeparator();
+                Iterator<Document> it = qr.getDocuments().iterator();
+                while(it.hasNext()){
+                    s = s + it.next().getDocID() + System.lineSeparator();
+                }
+                resultLines.add(s);
+            }
         }
         results.setItems(resultLines);
         results.setVisible(true);

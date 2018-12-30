@@ -38,6 +38,13 @@ public class Parse {
             currToken = list.get(i);
             if (i != list.size() -1)
                 nextToken = list.get(i+1);
+            if(currToken.contains("-")) {
+                String[] split = currToken.split("-");
+                for (int k = 0; k < split.length; k++) {
+                    String s = cleanTerm(split[k]);
+                    list.add(s);
+                }
+            }
             if(isANumber(currToken)) {
                 if (nextToken.equalsIgnoreCase("percent") || nextToken.equalsIgnoreCase("percentage")) {
                     newToken = currToken + "%";

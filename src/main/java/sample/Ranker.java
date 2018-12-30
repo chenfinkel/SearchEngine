@@ -1,6 +1,7 @@
 package sample;
 
 import org.apache.commons.lang3.StringUtils;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -17,13 +18,14 @@ public class Ranker {
     public List<Document> Rank(String title) {
         try {
             Parse p = new Parse();
-            LinkedHashMap<String, Integer> queryTerms = p.parseQuery(title);
-            LinkedHashMap<Term, String> postingLines = getPostingLines(queryTerms);
+            LinkedHashMap<String, Integer> parsedQuery = p.parseQuery(title);
+            LinkedHashMap<Term, Integer> queryTerms = getQueryTerms(parsedQuery);
+            LinkedHashMap<Term, LinkedHashMap<String, Integer>> termsDocs = getTermsDocs(queryTerms);
             HashMap<Document, Double> ranks = new HashMap<>();
             Iterator<Document> it = SearchEngine.documents.values().iterator();
             while (it.hasNext()) {
                 Document document = it.next();
-                double rank = CalcDocRank(queryTerms, postingLines, document);
+                double rank = CalcDocRank(queryTerms, termsDocs, document);
                 if (rank > 0)
                     ranks.put(document, rank);
             }
@@ -41,59 +43,88 @@ public class Ranker {
         }
     }
 
-    private LinkedHashMap<Term, String> getPostingLines(LinkedHashMap<String, Integer> queryTerms) {
-        LinkedHashMap<Term, String> postingLines = new LinkedHashMap<>();
-        Iterator<Map.Entry<String, Integer>> it = queryTerms.entrySet().iterator();
+    private LinkedHashMap<Term, Integer> getQueryTerms(LinkedHashMap<String, Integer> parsedQuery) {
+        LinkedHashMap<Term, Integer> qeuryTerms = new LinkedHashMap<>();
+        Iterator<Map.Entry<String, Integer>> it = parsedQuery.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, Integer> entry = it.next();
             String term = entry.getKey();
             Term t = SearchEngine.dictionary.get(term.toLowerCase());
-            if (t == null){
+            if (t == null)
                 t = SearchEngine.dictionary.get(term.toUpperCase());
-            }
-            if (t != null) {
-                try {
-                    Stream<String> lines = Files.lines(Paths.get(SearchEngine.postingPath + "\\" + Character.toLowerCase(term.charAt(0)) + ".txt"));
-                    String line = lines.skip(t.postingLine - 1).findFirst().get();
-                    postingLines.put(t, line);
-                } catch (Exception e) {
-                    e.printStackTrace();
+            if (t != null)
+                qeuryTerms.put(t, entry.getValue());
+        }
+        return qeuryTerms;
+    }
+
+    private LinkedHashMap<Term, LinkedHashMap<String, Integer>> getTermsDocs(LinkedHashMap<Term, Integer> queryTerms) {
+        LinkedHashMap<Term, LinkedHashMap<String, Integer>> postingLines = new LinkedHashMap<>();
+        Iterator<Map.Entry<Term, Integer>> it = queryTerms.entrySet().iterator();
+        while (it.hasNext()) {
+            Term t = it.next().getKey();
+            postingLines.put(t, new LinkedHashMap<>());
+            String term = t.getId();
+            try {
+                Stream<String> lines = Files.lines(Paths.get(SearchEngine.postingPath + "\\" + Character.toLowerCase(term.charAt(0)) + ".txt"));
+                String line = lines.skip(t.postingLine - 1).findFirst().get();
+                String[] split = line.split("#!");
+                String[] split2 = split[1].split("!");
+                for (int i = 0; i < split2.length; i++){
+                    String[] split3 = split2[i].split("\\*");
+                    Integer tfDoc = Integer.parseInt(split3[1]);
+                    postingLines.get(t).put(split3[0], tfDoc);
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
         return postingLines;
     }
 
-    private double CalcDocRank(LinkedHashMap<String, Integer> queryTerms, LinkedHashMap<Term, String> postingLines, Document doc) {
-        double ans = 0;
-        Iterator<Map.Entry<Term, String>> it = postingLines.entrySet().iterator();
+    private double CalcDocRank(LinkedHashMap<Term, Integer> queryTerms,  LinkedHashMap<Term, LinkedHashMap<String, Integer>> termsDocs, Document doc) {
+        double ans = 0, bm25 = 0, cosSim = 0;
+        String term = "";
+        int tfQuery = 0, tfDoc;
+        Iterator<Map.Entry<Term, LinkedHashMap<String, Integer>>> it = termsDocs.entrySet().iterator();
         while (it.hasNext()) {
-            Map.Entry<Term, String> entry = it.next();
+            Map.Entry<Term, LinkedHashMap<String, Integer>> entry = it.next();
             Term t = entry.getKey();
+            LinkedHashMap<String, Integer> docs = termsDocs.get(t);
             try {
-                String tmp = "";
-                String tfDoc = StringUtils.substringBetween(entry.getValue(), doc.getDocID() + "*", "!");
-                if (tfDoc != null) {
-                    int tfDocNum = Integer.parseInt(tfDoc);
-                    ans = ans + BM25(t, doc, tfDocNum, queryTerms.get(t.getId()));
+                String docID = doc.getDocID();
+                if (docs.containsKey(docID)) {
+                    tfDoc = docs.get(docID);
+                    tfQuery = queryTerms.get(t);
+                    bm25 = bm25 + BM25(t, doc, tfDoc, tfQuery);
+                    cosSim = cosSim + cosSimilarity(t, doc, tfDoc, queryTerms.size());
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
+            } catch (Exception e) { e.printStackTrace(); }
         }
+        ans = 0.3*bm25 + 0.7*cosSim;
         return ans;
     }
 
+    private double cosSimilarity(Term t, Document doc, int tfDoc, int numOfQueryTerms){
+        int numOfDocs = SearchEngine.documents.size();
+        double numerator = 0;
+        double normalTF = tfDoc/doc.getMaxTF();
+        double idf = Math.log(numOfDocs/t.docFreq);
+        numerator = numerator + (normalTF*idf);
+        double denominator = Math.sqrt(numOfQueryTerms) * Math.sqrt(doc.getSumOfSquareTFIDF());
+        return numerator/denominator;
+    }
+
     private double BM25(Term t, Document doc, int tfDoc, int tfQuery) {
-        double B = 0.75;
-        int K = 2;
+        double B = 0.35;
+        double K = 1.2;
         int length = doc.getSize();
         int df = t.docFreq;
         int numOfDocs = SearchEngine.documents.size();
         double firstPart = (((K + 1) * tfDoc) / (tfDoc + K * (1 - B + (B * (length / avdl)))));
         double secondPart = Math.log(numOfDocs + 1 / df);
-        return (tfQuery * firstPart * secondPart);
+        double ans = tfQuery * firstPart * secondPart;
+        return ans;
     }
 
     public class sort implements Comparator<Object> {

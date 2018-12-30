@@ -42,8 +42,8 @@ public class Controller {
         view = v;
     }
 
-    public String getDictionary(boolean stem){
-        return se.getDictionary(stem);
+    public List<Term> getDictionary(){
+        return se.getDictionary();
     }
 
     public void loadDict(String path, boolean stem){

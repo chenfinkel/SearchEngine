@@ -18,6 +18,8 @@ public class Document {
 
     private int uniqueTerms;
 
+    private double sumOfSquareTFIDF;
+
     public Document(String DocID, int maxTF, int uniqueTerms, String date, String city, String language, int size){
         this.DocID = DocID;
         this.maxTF = maxTF;
@@ -81,5 +83,17 @@ public class Document {
 
     public void setDate(String date){
         this.date = date;
+    }
+
+    public void addTFIDF(double tfidf){
+        sumOfSquareTFIDF = sumOfSquareTFIDF + tfidf*tfidf;
+    }
+
+    public void setSumOfSquareTFIDF(double sum){
+        sumOfSquareTFIDF = sum;
+    }
+
+    public double getSumOfSquareTFIDF() {
+        return sumOfSquareTFIDF;
     }
 }

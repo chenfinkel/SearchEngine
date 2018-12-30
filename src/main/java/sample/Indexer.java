@@ -3,6 +3,7 @@ package sample;
 import sun.awt.Mutex;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -35,7 +36,7 @@ public class Indexer {
     /**
      * maps a term to the documents it appeared in
      */
-    private LinkedHashMap<String, ArrayList<String>> termsDocs;
+    private LinkedHashMap<String, LinkedHashMap<String,Integer>> termsDocs;
 
     /**
      * maps a term to it's object
@@ -90,12 +91,20 @@ public class Indexer {
             for (int i = 0; i < sorted.size(); i++) {
                 String key = sorted.get(i);
                 String postingEntry = "";
-                postingEntry = key + "~" + terms.get(key).termFreq + "~" + terms.get(key).docFreq + "#";
-                ArrayList<String> freqs = new ArrayList<>();
+                int docFreq = termsDocs.get(key).size();
+                terms.get(key).docFreq = docFreq;
+                postingEntry = key + "~" + terms.get(key).termFreq + "~" + docFreq + "#";
+                LinkedHashMap<String, Integer> docs = termsDocs.get(key);
+                Iterator<Map.Entry<String,Integer>> it = docs.entrySet().iterator();
+                while(it.hasNext()){
+                    Map.Entry<String,Integer> entry = it.next();
+                    postingEntry = postingEntry + "!" + entry.getKey() + "*" + entry.getValue();
+                }
+                /*ArrayList<String> freqs = new ArrayList<>();
                 freqs.addAll(termsDocs.get(key));
                 for (int j = 0; j < freqs.size(); j++) {
                     postingEntry = postingEntry + "!" + freqs.get(j);
-                }
+                }*/
                 postingEntry = postingEntry + System.lineSeparator();
                 bw.write(postingEntry);
             }
@@ -149,9 +158,13 @@ public class Indexer {
             String lowerCase = termString.toLowerCase();
             if (terms.containsKey(lowerCase)) {
                 Term t = terms.get(lowerCase);
-                t.increaseDF();
                 t.termFreq = t.termFreq + docTermFreq;
-                termsDocs.get(lowerCase).add(line);
+                if (termsDocs.get(lowerCase).containsKey(DocID)){
+                    int doctf = termsDocs.get(lowerCase).get(DocID);
+                    termsDocs.get(lowerCase).put(DocID, docTermFreq+doctf);
+                }else {
+                    termsDocs.get(lowerCase).put(DocID, docTermFreq);
+                }
                 return;
             } else {
                 termString = termString.toUpperCase();
@@ -168,11 +181,10 @@ public class Indexer {
         else {
             t = new Term(termString);
             terms.put(termString, t);
-            termsDocs.put(termString, new ArrayList<String>());
+            termsDocs.put(termString, new LinkedHashMap<>());
         }
-        t.increaseDF();
         t.termFreq = t.termFreq + docTermFreq;
-        termsDocs.get(termString).add(line);
+        termsDocs.get(termString).put(DocID, docTermFreq);
     }
 
     private void writeTempFile(String path, Collection<String> c) {
@@ -347,7 +359,8 @@ public class Indexer {
                 int lineNum = 0;
                 while (Character.toLowerCase(first) == Character.toLowerCase(tmp)) {
                     lineNum++;
-                    String term = line.split("~")[0];
+                    String[] details = line.split("~");
+                    String term = details[0];
                     bw.write(line);
                     bw.newLine();
                     SearchEngine.dictionary.get(term).postingLine = lineNum;
@@ -373,12 +386,24 @@ public class Indexer {
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
             while (line != null) {
-                String[] split = line.split("~");
-                String term = split[0];
+                String[] splitt = line.split("~");
+                String term = splitt[0];
                 Term t = new Term(term);
-                t.termFreq = Integer.parseInt(split[1]);
-                t.docFreq = Integer.parseInt(split[2].split("#")[0]);
+                t.termFreq = Integer.parseInt(splitt[1]);
+                t.docFreq = Integer.parseInt(splitt[2].split("#")[0]);
                 SearchEngine.dictionary.put(term, t);
+
+                String[] split = line.split("#!");
+                String[] split2 = split[1].split("!");
+                for (int i = 0; i < split2.length; i++) {
+                    String[] split3 = split2[i].split("\\*");
+                    String docID = split3[0];
+                    Integer tfDoc = Integer.parseInt(split3[1]);
+                    double idf = Math.log(SearchEngine.documents.size() / t.docFreq);
+                    double tfidf = tfDoc * idf;
+                    SearchEngine.documents.get(docID).addTFIDF(tfidf);
+                }
+
                 line = br.readLine();
             }
             fr.close();

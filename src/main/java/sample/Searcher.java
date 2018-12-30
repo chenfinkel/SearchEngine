@@ -33,9 +33,8 @@ public class Searcher {
             for(int i = 0; i < QueryList.length; i++) {
                 String num = StringUtils.substringBetween(QueryList[i], "<num> Number: ", System.lineSeparator());
                 String title = StringUtils.substringBetween(QueryList[i], "<title> ", System.lineSeparator());
-                QueryResult qr = new QueryResult(num);
-                qr.setDocuments(ranker.Rank(title));
-                results.add(qr);
+                List<Document> relevantDocs = ranker.Rank(title);
+                results.add(new QueryResult(num, relevantDocs));
             }
         } catch(Exception e) { e.printStackTrace(); };
     }
