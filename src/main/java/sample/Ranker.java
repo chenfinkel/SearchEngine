@@ -15,7 +15,7 @@ public class Ranker {
         this.avdl = avdl;
     }
 
-    public List<Document> Rank(String title) {
+    public List<Map.Entry<Document,Double>> Rank(String title) {
         try {
             Parse p = new Parse();
             LinkedHashMap<String, Integer> parsedQuery = p.parseQuery(title);
@@ -31,10 +31,10 @@ public class Ranker {
             }
             List<Map.Entry<Document, Double>> sorted = new LinkedList<>(ranks.entrySet());
             Collections.sort(sorted, new Ranker.sort());
-            List<Document> result = new ArrayList<>();
+            List<Map.Entry<Document,Double>> result = new ArrayList<>();
             for (int i = 0; i < 50 && i < sorted.size(); i++) {
                 Map.Entry<Document, Double> entry = sorted.get(i);
-                result.add(entry.getKey());
+                result.add(entry);
             }
             return result;
         } catch (Exception e) {
@@ -101,7 +101,7 @@ public class Ranker {
                 }
             } catch (Exception e) { e.printStackTrace(); }
         }
-        ans = 0.3*bm25 + 0.7*cosSim;
+        ans = 0.1*bm25 + 0.9*cosSim;
         return ans;
     }
 
@@ -121,9 +121,13 @@ public class Ranker {
         int length = doc.getSize();
         int df = t.docFreq;
         int numOfDocs = SearchEngine.documents.size();
-        double firstPart = (((K + 1) * tfDoc) / (tfDoc + K * (1 - B + (B * (length / avdl)))));
-        double secondPart = Math.log(numOfDocs + 1 / df);
-        double ans = tfQuery * firstPart * secondPart;
+        double first = (K+1)*tfDoc;
+        double second = B * (length / avdl);
+        double third = 1 - B + second;
+        double fourth = K*third;
+        double fifth = tfDoc + fourth;
+        double log = Math.log(numOfDocs + 1 / df);
+        double ans = tfQuery * first/fifth * log;
         return ans;
     }
 
@@ -132,9 +136,9 @@ public class Ranker {
             Map.Entry<Document, Double> s1 = (Map.Entry<Document, Double>) o1;
             Map.Entry<Document, Double> s2 = (Map.Entry<Document, Double>) o2;
             double res = s1.getValue() - s2.getValue();
-            if (res > 0)
+            if (res < 0)
                 return 1;
-            else if (res < 0)
+            else if (res > 0)
                 return -1;
             else
                 return 0;

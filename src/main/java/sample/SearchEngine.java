@@ -284,9 +284,9 @@ public class SearchEngine {
             for (int i = 0; i < results.size(); i++) {
                 QueryResult qr = results.get(i);
                 String qrNum = qr.getQueryNumber();
-                List<Document> docs = qr.getDocuments();
+                List<Map.Entry<Document,Double>> docs = qr.getDocuments();
                 for (int j = 0; j < docs.size(); j++)
-                    bw.write(qrNum + " 0 " + docs.get(j).getDocID() + " 1 42.38 mt" + System.lineSeparator());
+                    bw.write(qrNum + " 0 " + docs.get(j).getKey().getDocID() + " 1 42.38 mt" + System.lineSeparator());
             }
             bw.flush();
             bw.close();

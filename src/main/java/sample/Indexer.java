@@ -100,11 +100,6 @@ public class Indexer {
                     Map.Entry<String,Integer> entry = it.next();
                     postingEntry = postingEntry + "!" + entry.getKey() + "*" + entry.getValue();
                 }
-                /*ArrayList<String> freqs = new ArrayList<>();
-                freqs.addAll(termsDocs.get(key));
-                for (int j = 0; j < freqs.size(); j++) {
-                    postingEntry = postingEntry + "!" + freqs.get(j);
-                }*/
                 postingEntry = postingEntry + System.lineSeparator();
                 bw.write(postingEntry);
             }

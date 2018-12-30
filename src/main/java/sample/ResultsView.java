@@ -14,6 +14,7 @@ import javafx.scene.layout.Priority;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class ResultsView {
 
@@ -36,9 +37,9 @@ public class ResultsView {
             for (int i = 0; i < res.size(); i++) {
                 QueryResult qr = res.get(i);
                 String s = "Query: " + qr.getQueryNumber() + System.lineSeparator();
-                Iterator<Document> it = qr.getDocuments().iterator();
+                Iterator<Map.Entry<Document,Double>> it = qr.getDocuments().iterator();
                 while(it.hasNext()){
-                    s = s + it.next().getDocID() + System.lineSeparator();
+                    s = s + it.next().getKey().getDocID() + System.lineSeparator();
                 }
                 resultLines.add(s);
             }
