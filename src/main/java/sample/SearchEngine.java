@@ -3,6 +3,7 @@ package sample;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.util.Pair;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.decimal4j.util.DoubleRounder;
@@ -81,7 +82,7 @@ public class SearchEngine {
         corpusPath = cp;
         postingPath = pp;
         SearchEngine.stem = stem;
-        readFile = new ReadFile(cp, pp, stem);
+        readFile = new ReadFile();
 
     }
 
@@ -222,7 +223,10 @@ public class SearchEngine {
 
     private void tfidfToFile() {
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(postingPath + "\\tfidf.txt"));
+            String path = postingPath;
+            if (stem)
+                path = path + "\\stemmed";
+            BufferedWriter bw = new BufferedWriter(new FileWriter(path + "\\tfidf.txt"));
             Iterator<Document> it = documents.values().iterator();
             while (it.hasNext()) {
                 Document d = it.next();
@@ -280,7 +284,10 @@ public class SearchEngine {
 
     private void resultsToFile(List<QueryResult> results) {
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(postingPath + "\\results.txt"));
+            String path = postingPath;
+            if (stem)
+                path = path + "\\stemmed";
+            BufferedWriter bw = new BufferedWriter(new FileWriter(path + "\\results.txt"));
             for (int i = 0; i < results.size(); i++) {
                 QueryResult qr = results.get(i);
                 String qrNum = qr.getQueryNumber();
@@ -294,6 +301,11 @@ public class SearchEngine {
             e.printStackTrace();
         }
     }
+
+    public List<Pair<String, Double>> getEntities(String docID) {
+        return documents.get(docID).getPrimaryEntities();
+    }
+
     /**
      * comparator for sorting the dictionary
      */

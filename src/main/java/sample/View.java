@@ -17,6 +17,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
+import javafx.util.Pair;
+
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,8 +51,6 @@ public class View {
     public TextField queryFile;
     @FXML
     public TextField singleQry;
-    @FXML
-    public CheckBox stemQry;
     @FXML
     public Button run;
     @FXML
@@ -188,8 +188,8 @@ public class View {
             queryFile.setText(f.getPath());
     }
 
-    public void getEntities(){
-
+    public List<Pair<String, Double>> getEntities(String docID){
+        return control.getEntities(docID);
     }
 
     public void Run(){

@@ -1,7 +1,5 @@
 package sample;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -59,6 +57,9 @@ public class Ranker {
     }
 
     private LinkedHashMap<Term, LinkedHashMap<String, Integer>> getTermsDocs(LinkedHashMap<Term, Integer> queryTerms) {
+        String path = SearchEngine.postingPath;
+        if(SearchEngine.stem)
+            path = path + "\\stemmed";
         LinkedHashMap<Term, LinkedHashMap<String, Integer>> postingLines = new LinkedHashMap<>();
         Iterator<Map.Entry<Term, Integer>> it = queryTerms.entrySet().iterator();
         while (it.hasNext()) {
@@ -66,7 +67,7 @@ public class Ranker {
             postingLines.put(t, new LinkedHashMap<>());
             String term = t.getId();
             try {
-                Stream<String> lines = Files.lines(Paths.get(SearchEngine.postingPath + "\\" + Character.toLowerCase(term.charAt(0)) + ".txt"));
+                Stream<String> lines = Files.lines(Paths.get(path + "\\" + Character.toLowerCase(term.charAt(0)) + ".txt"));
                 String line = lines.skip(t.postingLine - 1).findFirst().get();
                 String[] split = line.split("#!");
                 String[] split2 = split[1].split("!");

@@ -1,7 +1,9 @@
 package sample;
 
+import javafx.util.Pair;
 import sun.awt.Mutex;
 
+import javax.swing.text.html.HTMLDocument;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -141,9 +143,17 @@ public class Indexer {
                 maxTF = docTermFreq;
             insert(termString, docTermFreq, DocID);
         }
+        List<Pair<String, Double>> primaryEntities = getPrimaryEntities(docTerms, maxTF);
         Document d = new Document(DocID,maxTF,docTerms.size(),doc.getDate(),city,language,docSize);
+        d.setPrimaryEntities(primaryEntities);
         SearchEngine.documents.put(DocID, d);
-        docs.add(DocID + "~" + maxTF + "~" + docTerms.size() + "~" + doc.getDate() + "~" + city + "~" + language + "~" + docSize);
+        String s = DocID + "~" + maxTF + "~" + docTerms.size() + "~" + doc.getDate() + "~" + city + "~" + language + "~" + docSize + "~";
+        int i;
+        for (i = 0; i < primaryEntities.size()-1; i++){
+            s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue() + ",";
+        }
+        s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue();
+        docs.add(s);
     }
 
     private void insert(String termString, int docTermFreq, String DocID) {
@@ -180,6 +190,41 @@ public class Indexer {
         }
         t.termFreq = t.termFreq + docTermFreq;
         termsDocs.get(termString).put(DocID, docTermFreq);
+    }
+
+    private LinkedHashMap<String,Integer> findEntities(HashMap<String, Integer> docTerms){
+        LinkedHashMap<String, Integer> entities = new LinkedHashMap<>();
+        Iterator<Map.Entry<String, Integer>> it = docTerms.entrySet().iterator();
+        while(it.hasNext()){
+            Map.Entry<String, Integer> entry = it.next();
+            String termString = entry.getKey();
+            int frequency = entry.getValue();
+            if (Character.isUpperCase(termString.charAt(0)))
+                entities.put(termString.toUpperCase(), frequency);
+            else {
+                if (entities.containsKey(termString.toUpperCase()))
+                    entities.remove(termString.toUpperCase());
+            }
+        }
+        return entities;
+    }
+
+    private List<Pair<String, Double>> getPrimaryEntities(HashMap<String, Integer> docTerms, int maxTF){
+        LinkedHashMap<String, Integer> entities = findEntities(docTerms);
+        List<Pair<String, Double>> grades = new ArrayList<>();
+        Iterator<Map.Entry<String, Integer>> it = entities.entrySet().iterator();
+        while(it.hasNext()){
+            Map.Entry<String, Integer> entry = it.next();
+            String term = entry.getKey();
+            int frequency = entry.getValue();
+            double grade = ((double)frequency)/maxTF;
+            grades.add(new Pair<>(term, grade));
+        }
+        Collections.sort(grades, new sortByGrade());
+        List<Pair<String, Double>> primaryEntities = new ArrayList<>();
+        for (int i = 0; i < 5 && i < grades.size(); i++)
+            primaryEntities.add(grades.get(i));
+        return primaryEntities;
     }
 
     private void writeTempFile(String path, Collection<String> c) {
@@ -233,6 +278,20 @@ public class Indexer {
             String s1 = (String) o1;
             String s2 = (String) o2;
             return s1.toLowerCase().compareTo(s2.toLowerCase());
+        }
+    }
+
+    public class sortByGrade implements Comparator<Object> {
+        public int compare(Object o1, Object o2) {
+            Pair<Document, Double> s1 = (Pair<Document, Double>) o1;
+            Pair<Document, Double> s2 = (Pair<Document, Double>) o2;
+            double res = s1.getValue() - s2.getValue();
+            if (res < 0)
+                return 1;
+            else if (res > 0)
+                return -1;
+            else
+                return 0;
         }
     }
 

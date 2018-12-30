@@ -1,5 +1,10 @@
 package sample;
 
+import javafx.util.Pair;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class Document {
 
     private String DocID;
@@ -20,6 +25,8 @@ public class Document {
 
     private double sumOfSquareTFIDF;
 
+    private List<Pair<String, Double>> primaryEntities;
+
     public Document(String DocID, int maxTF, int uniqueTerms, String date, String city, String language, int size){
         this.DocID = DocID;
         this.maxTF = maxTF;
@@ -28,7 +35,17 @@ public class Document {
         this.city = city;
         this.language = language;
         this.size = size;
+        this.primaryEntities = new ArrayList<>();
     }
+
+    public List<Pair<String, Double>> getPrimaryEntities() {
+        return primaryEntities;
+    }
+
+    public void setPrimaryEntities(List<Pair<String, Double>> primaryEntities) {
+        this.primaryEntities.addAll(primaryEntities);
+    }
+
     public Document(String DocID){
         this.DocID = DocID;
     }

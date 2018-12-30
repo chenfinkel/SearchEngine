@@ -1,9 +1,11 @@
 package sample;
 
 import javafx.scene.control.Alert;
+import javafx.util.Pair;
 
 import java.awt.event.ActionEvent;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,5 +70,9 @@ public class Controller {
 
     public List<QueryResult> RunMultipleQueries(String queryFilePath) {
         return se.RunMultipleQueries(queryFilePath);
+    }
+
+    public List<Pair<String, Double>> getEntities(String docID) {
+        return se.getEntities(docID);
     }
 }

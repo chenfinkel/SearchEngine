@@ -19,11 +19,6 @@ public class ReadFile {
 
     /** empty constructor */
     public ReadFile(){
-
-    }
-
-    /** constructor */
-    public ReadFile(String path, String postPath, boolean stem) {
         exeServ = Executors.newFixedThreadPool(10);
     }
 
