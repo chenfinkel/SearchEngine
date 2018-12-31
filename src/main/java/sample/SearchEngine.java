@@ -270,14 +270,16 @@ public class SearchEngine {
     }
 
 
-    public List<QueryResult> RunMultipleQueries(String queryFilePath) {
+    public List<QueryResult> RunMultipleQueries(String queryFilePath, boolean semantic) {
+        searcher.setSemantic(semantic);
         searcher.runQueries(queryFilePath);
         List<QueryResult> results = searcher.getResults();
         resultsToFile(results);
         return results;
     }
 
-    public List<QueryResult> RunSingleQuery(String query) {
+    public List<QueryResult> RunSingleQuery(String query, boolean semantic) {
+        searcher.setSemantic(semantic);
         searcher.runQuery(query);
         return searcher.getResults();
     }

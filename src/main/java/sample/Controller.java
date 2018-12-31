@@ -64,12 +64,12 @@ public class Controller {
     }
 
 
-    public List<QueryResult> RunSingleQuery(String query) {
-        return se.RunSingleQuery(query);
+    public List<QueryResult> RunSingleQuery(String query, boolean semantic) {
+        return se.RunSingleQuery(query, semantic);
     }
 
-    public List<QueryResult> RunMultipleQueries(String queryFilePath) {
-        return se.RunMultipleQueries(queryFilePath);
+    public List<QueryResult> RunMultipleQueries(String queryFilePath, boolean semantic) {
+        return se.RunMultipleQueries(queryFilePath, semantic);
     }
 
     public List<Pair<String, Double>> getEntities(String docID) {

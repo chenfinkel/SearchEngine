@@ -12,6 +12,8 @@ public class Searcher {
 
     private Ranker ranker;
 
+    private boolean semantic;
+
 
     /** First string is the number of the query, and the second string is for the format for the trec Evel*/
     //private HashSet<QueryResult> RelevantDoc = new HashSet<>();
@@ -21,7 +23,7 @@ public class Searcher {
 
     public Searcher(){
         double avdl = calcAVDL();
-        ranker = new Ranker(avdl);
+        ranker = new Ranker(avdl, semantic);
         results = new ArrayList<>();
     }
 
@@ -58,5 +60,14 @@ public class Searcher {
 
     public List<QueryResult> getResults() {
         return results;
+    }
+
+    public void setSemantic(boolean semantic) {
+        this.semantic = semantic;
+        ranker.setSemantic(semantic);
+    }
+
+    public boolean getSemantic(){
+        return semantic;
     }
 }

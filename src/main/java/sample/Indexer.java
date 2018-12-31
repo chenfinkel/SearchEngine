@@ -143,16 +143,18 @@ public class Indexer {
                 maxTF = docTermFreq;
             insert(termString, docTermFreq, DocID);
         }
-        List<Pair<String, Double>> primaryEntities = getPrimaryEntities(docTerms, maxTF);
-        Document d = new Document(DocID,maxTF,docTerms.size(),doc.getDate(),city,language,docSize);
-        d.setPrimaryEntities(primaryEntities);
-        SearchEngine.documents.put(DocID, d);
+        SearchEngine.documents.put(DocID, new Document(DocID,maxTF,docTerms.size(),doc.getDate(),city,language,docSize));
         String s = DocID + "~" + maxTF + "~" + docTerms.size() + "~" + doc.getDate() + "~" + city + "~" + language + "~" + docSize + "~";
-        int i;
-        for (i = 0; i < primaryEntities.size()-1; i++){
-            s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue() + ",";
+        List<Pair<String, Double>> primaryEntities = getPrimaryEntities(docTerms, maxTF);
+        if (primaryEntities != null) {
+            Document d = SearchEngine.documents.get(DocID);
+            d.setPrimaryEntities(primaryEntities);
+            int i;
+            for (i = 0; i < primaryEntities.size() - 1; i++) {
+                s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue() + ",";
+            }
+            s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue();
         }
-        s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue();
         docs.add(s);
     }
 
@@ -198,12 +200,14 @@ public class Indexer {
         while(it.hasNext()){
             Map.Entry<String, Integer> entry = it.next();
             String termString = entry.getKey();
-            int frequency = entry.getValue();
-            if (Character.isUpperCase(termString.charAt(0)))
-                entities.put(termString.toUpperCase(), frequency);
-            else {
-                if (entities.containsKey(termString.toUpperCase()))
-                    entities.remove(termString.toUpperCase());
+            if (!termString.equals("")) {
+                int frequency = entry.getValue();
+                if (Character.isUpperCase(termString.charAt(0)))
+                    entities.put(termString.toUpperCase(), frequency);
+                else {
+                    if (entities.containsKey(termString.toUpperCase()))
+                        entities.remove(termString.toUpperCase());
+                }
             }
         }
         return entities;
@@ -211,19 +215,22 @@ public class Indexer {
 
     private List<Pair<String, Double>> getPrimaryEntities(HashMap<String, Integer> docTerms, int maxTF){
         LinkedHashMap<String, Integer> entities = findEntities(docTerms);
-        List<Pair<String, Double>> grades = new ArrayList<>();
-        Iterator<Map.Entry<String, Integer>> it = entities.entrySet().iterator();
-        while(it.hasNext()){
-            Map.Entry<String, Integer> entry = it.next();
-            String term = entry.getKey();
-            int frequency = entry.getValue();
-            double grade = ((double)frequency)/maxTF;
-            grades.add(new Pair<>(term, grade));
+        List<Pair<String, Double>> primaryEntities = null;
+        if (entities.size() > 0) {
+            primaryEntities = new ArrayList<>();
+            List<Pair<String, Double>> grades = new ArrayList<>();
+            Iterator<Map.Entry<String, Integer>> it = entities.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<String, Integer> entry = it.next();
+                String term = entry.getKey();
+                int frequency = entry.getValue();
+                double grade = ((double) frequency) / maxTF;
+                grades.add(new Pair<>(term, grade));
+            }
+            Collections.sort(grades, new sortByGrade());
+            for (int i = 0; i < 5 && i < grades.size(); i++)
+                primaryEntities.add(grades.get(i));
         }
-        Collections.sort(grades, new sortByGrade());
-        List<Pair<String, Double>> primaryEntities = new ArrayList<>();
-        for (int i = 0; i < 5 && i < grades.size(); i++)
-            primaryEntities.add(grades.get(i));
         return primaryEntities;
     }
 

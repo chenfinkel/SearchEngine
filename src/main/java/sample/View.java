@@ -55,6 +55,8 @@ public class View {
     public Button run;
     @FXML
     public Button browseQueries;
+    @FXML
+    public CheckBox semantic;
 
     public View() {
         control = new Controller();
@@ -201,12 +203,12 @@ public class View {
             a.setContentText("YOU MUST ENTER A QUERY OR A QUERIES FILE!");
             a.show();
         } else {
-            Boolean stem = stemming.isSelected();
+            boolean isSemantic = semantic.isSelected();
             long StartTime = System.nanoTime();
             if (!query.equals(""))
-                results = control.RunSingleQuery(query);
+                results = control.RunSingleQuery(query, isSemantic);
             else
-                results = control.RunMultipleQueries(queriesFile);
+                results = control.RunMultipleQueries(queriesFile, isSemantic);
             long EndTime = System.nanoTime();
             double totalTime = (EndTime - StartTime)/1000000000.0;
             System.out.println("search time: " + totalTime);

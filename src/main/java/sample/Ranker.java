@@ -1,5 +1,6 @@
 package sample;
 
+import javax.swing.text.html.HTMLDocument;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -9,14 +10,20 @@ public class Ranker {
 
     private double avdl;
 
-    public Ranker(double avdl) {
+    private boolean semantic;
+
+    public Ranker(double avdl, boolean semantic) {
         this.avdl = avdl;
+        this.semantic = semantic;
     }
 
     public List<Map.Entry<Document,Double>> Rank(String title) {
         try {
             Parse p = new Parse();
             LinkedHashMap<String, Integer> parsedQuery = p.parseQuery(title);
+            if (semantic) {
+                semanticTreatment(parsedQuery);
+            }
             LinkedHashMap<Term, Integer> queryTerms = getQueryTerms(parsedQuery);
             LinkedHashMap<Term, LinkedHashMap<String, Integer>> termsDocs = getTermsDocs(queryTerms);
             HashMap<Document, Double> ranks = new HashMap<>();
@@ -39,6 +46,43 @@ public class Ranker {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private HashSet<String> getSemantics(LinkedHashMap<String, Integer> parsedQuery) {
+        HashSet<String> semantics = new HashSet<>();
+        Iterator<String> it = parsedQuery.keySet().iterator();
+        while(it.hasNext()){
+            WordSemantics ws = new WordSemantics();
+            HashSet<String> sem = ws.getSemanticsWords(it.next());
+            Iterator<String> it2 = sem.iterator();
+            while(it2.hasNext()){
+                String semanticWord = it2.next();
+                semantics.add(semanticWord);
+            }
+        }
+        return semantics;
+    }
+
+    private void semanticTreatment(LinkedHashMap<String, Integer> parsedQuery){
+        Parse p = new Parse();
+        HashSet<String> semantics = getSemantics(parsedQuery);
+        LinkedHashMap<String,Integer> parsedSemantics = new LinkedHashMap<>();
+        Iterator<String> it = semantics.iterator();
+        while(it.hasNext()){
+            LinkedHashMap<String, Integer> parsed = p.parseQuery(it.next());
+            Iterator<Map.Entry<String, Integer>> it2 = parsed.entrySet().iterator();
+            while(it2.hasNext()){
+                Map.Entry<String, Integer> entry = it2.next();
+                if(parsedSemantics.containsKey(entry.getKey())){
+                    int freq = parsedSemantics.get(entry.getKey());
+                    parsedSemantics.put(entry.getKey(), freq+entry.getValue());
+                } else {
+                    parsedSemantics.put(entry.getKey(), entry.getValue());
+                }
+            }
+            parsedSemantics.putAll(parsed);
+        }
+        parsedQuery.putAll(parsedSemantics);
     }
 
     private LinkedHashMap<Term, Integer> getQueryTerms(LinkedHashMap<String, Integer> parsedQuery) {
@@ -144,6 +188,10 @@ public class Ranker {
             else
                 return 0;
         }
+    }
+
+    public void setSemantic(boolean semantic) {
+        this.semantic = semantic;
     }
 
 
