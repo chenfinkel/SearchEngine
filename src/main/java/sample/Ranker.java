@@ -20,7 +20,7 @@ public class Ranker {
         cities = new HashSet<>();
     }
 
-    public List<Map.Entry<Document,Double>> Rank(String title) {
+    public List<Map.Entry<Document, Double>> Rank(String title) {
         try {
             Parse p = new Parse();
             LinkedHashMap<String, Integer> parsedQuery = p.parseQuery(title);
@@ -30,18 +30,22 @@ public class Ranker {
             LinkedHashMap<Term, Integer> queryTerms = getQueryTerms(parsedQuery);
             LinkedHashMap<Term, LinkedHashMap<String, Integer>> termsDocs = getTermsDocs(queryTerms);
             HashMap<Document, Double> ranks = new HashMap<>();
-            Iterator<Document> it = SearchEngine.documents.values().iterator();
+            Iterator<Document> it;
+            if (cities.size() == 0)
+                it = SearchEngine.documents.values().iterator();
+            else {
+                LinkedHashSet<Document> cityDocs = getCityDocs();
+                it = cityDocs.iterator();
+            }
             while (it.hasNext()) {
                 Document document = it.next();
-                    if (cities.size() == 0 || cities.contains(document.getCity())){
-                        double rank = CalcDocRank(queryTerms, termsDocs, document);
-                        if (rank > 0)
-                            ranks.put(document, rank);
-                    }
+                double rank = CalcDocRank(queryTerms, termsDocs, document);
+                if (rank > 0)
+                    ranks.put(document, rank);
             }
             List<Map.Entry<Document, Double>> sorted = new LinkedList<>(ranks.entrySet());
             Collections.sort(sorted, new Ranker.sort());
-            List<Map.Entry<Document,Double>> result = new ArrayList<>();
+            List<Map.Entry<Document, Double>> result = new ArrayList<>();
             for (int i = 0; i < 50 && i < sorted.size(); i++) {
                 Map.Entry<Document, Double> entry = sorted.get(i);
                 result.add(entry);
@@ -56,11 +60,11 @@ public class Ranker {
     private HashSet<String> getSemantics(LinkedHashMap<String, Integer> parsedQuery) {
         HashSet<String> semantics = new HashSet<>();
         Iterator<String> it = parsedQuery.keySet().iterator();
-        while(it.hasNext()){
+        while (it.hasNext()) {
             WordSemantics ws = new WordSemantics();
             HashSet<String> sem = ws.getSemanticsWords(it.next());
             Iterator<String> it2 = sem.iterator();
-            while(it2.hasNext()){
+            while (it2.hasNext()) {
                 String semanticWord = it2.next();
                 semantics.add(semanticWord);
             }
@@ -68,19 +72,19 @@ public class Ranker {
         return semantics;
     }
 
-    private void semanticTreatment(LinkedHashMap<String, Integer> parsedQuery){
+    private void semanticTreatment(LinkedHashMap<String, Integer> parsedQuery) {
         Parse p = new Parse();
         HashSet<String> semantics = getSemantics(parsedQuery);
-        LinkedHashMap<String,Integer> parsedSemantics = new LinkedHashMap<>();
+        LinkedHashMap<String, Integer> parsedSemantics = new LinkedHashMap<>();
         Iterator<String> it = semantics.iterator();
-        while(it.hasNext()){
+        while (it.hasNext()) {
             LinkedHashMap<String, Integer> parsed = p.parseQuery(it.next());
             Iterator<Map.Entry<String, Integer>> it2 = parsed.entrySet().iterator();
-            while(it2.hasNext()){
+            while (it2.hasNext()) {
                 Map.Entry<String, Integer> entry = it2.next();
-                if(parsedSemantics.containsKey(entry.getKey())){
+                if (parsedSemantics.containsKey(entry.getKey())) {
                     int freq = parsedSemantics.get(entry.getKey());
-                    parsedSemantics.put(entry.getKey(), freq+entry.getValue());
+                    parsedSemantics.put(entry.getKey(), freq + entry.getValue());
                 } else {
                     parsedSemantics.put(entry.getKey(), entry.getValue());
                 }
@@ -107,7 +111,7 @@ public class Ranker {
 
     private LinkedHashMap<Term, LinkedHashMap<String, Integer>> getTermsDocs(LinkedHashMap<Term, Integer> queryTerms) {
         String path = SearchEngine.postingPath;
-        if(SearchEngine.stem)
+        if (SearchEngine.stem)
             path = path + "\\stemmed";
         LinkedHashMap<Term, LinkedHashMap<String, Integer>> postingLines = new LinkedHashMap<>();
         Iterator<Map.Entry<Term, Integer>> it = queryTerms.entrySet().iterator();
@@ -120,7 +124,7 @@ public class Ranker {
                 String line = lines.skip(t.postingLine - 1).findFirst().get();
                 String[] split = line.split("#!");
                 String[] split2 = split[1].split("!");
-                for (int i = 0; i < split2.length; i++){
+                for (int i = 0; i < split2.length; i++) {
                     String[] split3 = split2[i].split("\\*");
                     Integer tfDoc = Integer.parseInt(split3[1]);
                     postingLines.get(t).put(split3[0], tfDoc);
@@ -132,7 +136,7 @@ public class Ranker {
         return postingLines;
     }
 
-    private double CalcDocRank(LinkedHashMap<Term, Integer> queryTerms,  LinkedHashMap<Term, LinkedHashMap<String, Integer>> termsDocs, Document doc) {
+    private double CalcDocRank(LinkedHashMap<Term, Integer> queryTerms, LinkedHashMap<Term, LinkedHashMap<String, Integer>> termsDocs, Document doc) {
         double ans = 0, bm25 = 0, cosSim = 0;
         String term = "";
         int tfQuery = 0, tfDoc;
@@ -149,20 +153,22 @@ public class Ranker {
                     bm25 = bm25 + BM25(t, doc, tfDoc, tfQuery);
                     cosSim = cosSim + cosSimilarity(t, doc, tfDoc, queryTerms.size());
                 }
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        ans = 0.1*bm25 + 0.9*cosSim;
+        ans = 0.1 * bm25 + 0.9 * cosSim;
         return ans;
     }
 
-    private double cosSimilarity(Term t, Document doc, int tfDoc, int numOfQueryTerms){
+    private double cosSimilarity(Term t, Document doc, int tfDoc, int numOfQueryTerms) {
         int numOfDocs = SearchEngine.documents.size();
         double numerator = 0;
-        double normalTF = tfDoc/doc.getMaxTF();
-        double idf = Math.log(numOfDocs/t.docFreq);
-        numerator = numerator + (normalTF*idf);
+        double normalTF = tfDoc / doc.getMaxTF();
+        double idf = Math.log(numOfDocs / t.docFreq);
+        numerator = numerator + (normalTF * idf);
         double denominator = Math.sqrt(numOfQueryTerms) * Math.sqrt(doc.getSumOfSquareTFIDF());
-        return numerator/denominator;
+        return numerator / denominator;
     }
 
     private double BM25(Term t, Document doc, int tfDoc, int tfQuery) {
@@ -171,18 +177,29 @@ public class Ranker {
         int length = doc.getSize();
         int df = t.docFreq;
         int numOfDocs = SearchEngine.documents.size();
-        double first = (K+1)*tfDoc;
+        double first = (K + 1) * tfDoc;
         double second = B * (length / avdl);
         double third = 1 - B + second;
-        double fourth = K*third;
+        double fourth = K * third;
         double fifth = tfDoc + fourth;
         double log = Math.log(numOfDocs + 1 / df);
-        double ans = tfQuery * first/fifth * log;
+        double ans = tfQuery * first / fifth * log;
         return ans;
     }
 
     public void setCities(HashSet<String> cities) {
         this.cities.addAll(cities);
+    }
+
+    public LinkedHashSet<Document> getCityDocs() {
+        Iterator<String> it = cities.iterator();
+        LinkedHashSet<Document> docs = new LinkedHashSet<>();
+        while (it.hasNext()) {
+            String city = it.next();
+            City c = SearchEngine.cities.get(city);
+            docs.addAll(c.getDocuments());
+        }
+        return docs;
     }
 
     public class sort implements Comparator<Object> {

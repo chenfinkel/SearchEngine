@@ -47,12 +47,10 @@ public class mergeThread extends Thread {
             File[] files = folders.listFiles();
             int size = files.length;
             if (size == 1) {
-                if (file.equals("city"))
-                    copyCities(files[0]);
-                else {
+                try {
                     FileUtils.copyFile(files[0], new File(postPath + "\\" + file + ".txt"));
                     Files.deleteIfExists(files[0].toPath());
-                }
+                }catch (Exception e) { e.printStackTrace(); }
             }
             while (size > 1) {
                 int i;
@@ -61,9 +59,6 @@ public class mergeThread extends Thread {
                     File f1 = files[i];
                     File f2 = files[i + 1];
                     if (size == 2) {
-                        if (file.equals("city"))
-                            mergeCities(f1, f2);
-                        else
                             mergeFiles(f1, f2, index2, true, file);
                         break;
                     } else
@@ -74,8 +69,6 @@ public class mergeThread extends Thread {
             }
             if(file.equals("languages"))
                 saveLanguages();
-            if(file.equals("city"))
-                saveCities();
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);
@@ -92,23 +85,6 @@ public class mergeThread extends Thread {
             line = br.readLine();
         }
         SearchEngine.languages.putAll(list);
-        fr.close();
-    }
-
-    private void saveCities() throws Exception {
-        LinkedHashMap<String, City> list = new LinkedHashMap<>();
-        FileReader fr = new FileReader(postPath + "\\cities.txt");
-        BufferedReader br = new BufferedReader(fr);
-        String line = br.readLine();
-        while (line != null) {
-            String[] details = line.split(",");
-            String city = details[0];
-            String state = details[1];
-            String population =
-            list.put(splitLine, splitLine);
-            line = br.readLine();
-        }
-        SearchEngine.cities.putAll(list);
         fr.close();
     }
 
@@ -178,146 +154,4 @@ public class mergeThread extends Thread {
             e.printStackTrace();
         }
     }
-
-    private void mergeCities(File left, File right) {
-        try {
-            FileWriter fw = new FileWriter(postPath + "\\cities.txt");
-            BufferedWriter bw = new BufferedWriter(fw);
-            FileReader frLeft = new FileReader(left.getPath());
-            BufferedReader brLeft = new BufferedReader(frLeft);
-            FileReader frRight = new FileReader(right.getPath());
-            BufferedReader brRight = new BufferedReader(frRight);
-            String newLine = "";
-            String leftLine = brLeft.readLine();
-            String rightLine = brRight.readLine();
-            while (leftLine != null && rightLine != null) {
-                if (leftLine.equals("") || rightLine.equals(""))
-                    continue;
-                if (leftLine.equalsIgnoreCase(rightLine)) {
-                    newLine = getDetails(leftLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                    leftLine = brLeft.readLine();
-                    rightLine = brRight.readLine();
-                } else if (leftLine.compareToIgnoreCase(rightLine) < 0) {
-                    newLine = getDetails(leftLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                    leftLine = brLeft.readLine();
-                } else {
-                    newLine = getDetails(rightLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                    rightLine = brRight.readLine();
-                }
-            }
-            if (leftLine != null) {
-                newLine = getDetails(leftLine);
-                bw.write(newLine);
-                bw.newLine();
-                while ((leftLine = brLeft.readLine()) != null) {
-                    newLine = getDetails(leftLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                }
-            }
-            if (rightLine != null) {
-                newLine = getDetails(rightLine);
-                bw.write(newLine);
-                bw.newLine();
-                while ((rightLine = brRight.readLine()) != null) {
-                    newLine = getDetails(rightLine);
-                    bw.write(newLine);
-                    bw.newLine();
-                }
-            }
-            bw.flush();
-            fw.close();
-            frLeft.close();
-            frRight.close();
-            Files.deleteIfExists(left.toPath());
-            Files.deleteIfExists(right.toPath());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private String getDetails(String city) {
-        try {
-            URL url = new URL("http://getcitydetails.geobytes.com/GetCityDetails?fqcn=" + city);
-            if (url != null) {
-
-                String page = IOUtils.toString(url.openConnection().getInputStream());
-
-                String currency = StringUtils.substringBetween(page, '"' + "geobytescurrencycode" + '"' + ":" + '"', '"' + ",");
-                if (currency == null || currency.equals(""))
-                    currency = "X";
-                String pop = StringUtils.substringBetween(page, '"' + "geobytespopulation" + '"' + ":" + '"', '"' + ",");
-                String population;
-                if (pop == null || pop.equals(""))
-                    population = "X";
-                else
-                    population = getNumber(pop);
-                String country = StringUtils.substringBetween(page, '"' + "geobytescountry" + '"' + ":" + '"', '"' + ",");
-                if (country == null || country.equals(""))
-                    country = "X";
-
-                return (city + "," + country + "," + population + "," + currency);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    private String getNumber(String s) {
-        double num = Double.parseDouble(s);
-        String Snum = "";
-        if (num >= 1000000000) {
-            num = num / 1000000000;
-            num = DoubleRounder.round(num, 2);
-            if (num == (int) num)
-                Snum = (int) num + "B";
-            else
-                Snum = num + "B";
-        } else if (num >= 1000000) {
-            num = num / 1000000;
-            num = DoubleRounder.round(num, 2);
-            if (num == (int) num)
-                Snum = (int) num + "M";
-            else
-                Snum = num + "M";
-        } else if (num >= 1000) {
-            num = num / 1000;
-            num = DoubleRounder.round(num, 2);
-            if (num == (int) num)
-                Snum = (int) num + "K";
-            else
-                Snum = num + "K";
-        } else
-            Snum = s;
-        return Snum;
-    }
-
-    private void copyCities(File file) {
-        try {
-            FileWriter fw = new FileWriter(postPath + "\\cities.txt", true);
-            BufferedWriter bw = new BufferedWriter(fw);
-            FileReader fr = new FileReader(file.getPath());
-            BufferedReader br = new BufferedReader(fr);
-            String city = br.readLine();
-            while (city != null) {
-                bw.write(getDetails(city));
-                bw.newLine();
-                city = br.readLine();
-            }
-            bw.flush();
-            fw.close();
-            fr.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
 }

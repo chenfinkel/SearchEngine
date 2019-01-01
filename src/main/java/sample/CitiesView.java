@@ -37,7 +37,7 @@ public class CitiesView {
     }
 
     public void setCities() {
-        ConcurrentHashMap<String, String> city = view.getCities();
+        ConcurrentHashMap<String, City> city = view.getCities();
         ObservableList list = FXCollections.observableArrayList();
         if (city.size() == 0) {
             list.add(new Text("No cities found!"));

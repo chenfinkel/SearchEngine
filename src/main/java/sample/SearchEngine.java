@@ -105,98 +105,112 @@ public class SearchEngine {
             loadDictionary(path, stem);
             loadDocs(path, stem);
             loadTFIDF(path, stem);
-            load("languages", path, stem);
-            load("cities", path, stem);
+            loadLanguages(path, stem);
+            loadCities(path, stem);
             searcher = new Searcher();
             return true;
-        } catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
     }
 
-    private void load(String file, String path, boolean stem) throws Exception{
-            LinkedHashMap<String, String> list = new LinkedHashMap<>();
-            FileReader fr = new FileReader(path + "\\" + file + ".txt");
-            BufferedReader br = new BufferedReader(fr);
-            String line = br.readLine();
-            while (line != null) {
-                String splitLine = line.split(",")[0];
-                list.put(splitLine, splitLine);
-                line = br.readLine();
-                if (file.equals("languages"))
-                    SearchEngine.languages.putAll(list);
-                else if (file.equals("cities"))
-                    SearchEngine.cities.putAll(list);
-            }
-            fr.close();
+    private void loadLanguages(String path, boolean stem) throws Exception {
+        FileReader fr = new FileReader(path + "\\languages.txt");
+        BufferedReader br = new BufferedReader(fr);
+        String line = br.readLine();
+        while (line != null) {
+            languages.put(line, line);
+            line = br.readLine();
+        }
+        fr.close();
     }
 
-    private void loadTFIDF(String path, boolean stem)throws Exception {
-            if (stem)
-                path = path + "\\stemmed";
-            FileReader fr = new FileReader(path + "\\tfidf.txt");
-            BufferedReader br = new BufferedReader(fr);
-            String line = br.readLine();
-            while (line != null) {
-                String[] docDetails = line.split("~");
-                String docID = docDetails[0];
-                double tfidf = Double.parseDouble(docDetails[1]);
-                documents.get(docID).setSumOfSquareTFIDF(tfidf);
-                line = br.readLine();
-            }
-            fr.close();
+    private void loadCities(String path, boolean stem) throws Exception {
+        FileReader fr = new FileReader(path + "\\cities.txt");
+        BufferedReader br = new BufferedReader(fr);
+        String line = br.readLine();
+        while (line != null) {
+            String[] details = line.split(",");
+            String city = details[0];
+            String state = details[1];
+            String population = details[2];
+            String currency = details[3];
+            cities.put(city, new City(city, state, population, currency));
+            City c = cities.get(city);
+            String[] docs = details[4].split("~");
+            for (int i = 0; i < docs.length; i++)
+                c.addDocument(documents.get(docs[i]));
+            line = br.readLine();
+        }
+        fr.close();
     }
 
-    private void loadDocs(String path, boolean stem)throws Exception {
-            if (stem)
-                path = path + "\\stemmed";
-            FileReader fr = new FileReader(path + "\\docs.txt");
-            BufferedReader br = new BufferedReader(fr);
-            String line = br.readLine();
-            String s = "";
-            while (line != null) {
-                String[] docDetails = line.split("~");
-                String docID = docDetails[0];
-                int maxTF = Integer.parseInt(docDetails[1]);
-                int uniqueTerms = Integer.parseInt(docDetails[2]);
-                String date = docDetails[3];
-                String city = docDetails[4];
-                String language = docDetails[5];
-                int size = Integer.parseInt(docDetails[6]);
-                String[] entity = docDetails[7].split(",");
-                List<Pair<String, Double>> entities = new ArrayList<>();
-                for (int i = 0; i < entity.length; i++) {
-                    String[] tmp = entity[i].split("\\*");
-                    Double Rank = Double.parseDouble(tmp[1]);
-                    String term = tmp[0];
-                    entities.add(new Pair(term, Rank));
-                }
-                Document d = new Document(docID, maxTF, uniqueTerms, date, city, language, size);
-                d.setPrimaryEntities(entities);
-                documents.put(docID, d);
-                line = br.readLine();
-            }
-            fr.close();
+    private void loadTFIDF(String path, boolean stem) throws Exception {
+        if (stem)
+            path = path + "\\stemmed";
+        FileReader fr = new FileReader(path + "\\tfidf.txt");
+        BufferedReader br = new BufferedReader(fr);
+        String line = br.readLine();
+        while (line != null) {
+            String[] docDetails = line.split("~");
+            String docID = docDetails[0];
+            double tfidf = Double.parseDouble(docDetails[1]);
+            documents.get(docID).setSumOfSquareTFIDF(tfidf);
+            line = br.readLine();
+        }
+        fr.close();
     }
 
-    private void loadDictionary(String path, boolean stem)throws Exception {
-            dictionary = new ConcurrentHashMap<>();
-            if (stem)
-                path = path + "\\stemmed";
-            FileReader fr = new FileReader(path + "\\dictionary.txt");
-            BufferedReader br = new BufferedReader(fr);
-            String line = br.readLine();
-            String s = "";
-            while (line != null) {
-                String[] termDetails = line.split("#");
-                String term = termDetails[0];
-                int termFreq = Integer.parseInt(termDetails[1]);
-                int docFreq = Integer.parseInt(termDetails[2]);
-                int postingLine = Integer.parseInt(termDetails[3]);
-                dictionary.put(term, new Term(term, termFreq, docFreq, postingLine));
-                line = br.readLine();
+    private void loadDocs(String path, boolean stem) throws Exception {
+        if (stem)
+            path = path + "\\stemmed";
+        FileReader fr = new FileReader(path + "\\docs.txt");
+        BufferedReader br = new BufferedReader(fr);
+        String line = br.readLine();
+        String s = "";
+        while (line != null) {
+            String[] docDetails = line.split("~");
+            String docID = docDetails[0];
+            int maxTF = Integer.parseInt(docDetails[1]);
+            int uniqueTerms = Integer.parseInt(docDetails[2]);
+            String date = docDetails[3];
+            String city = docDetails[4];
+            String language = docDetails[5];
+            int size = Integer.parseInt(docDetails[6]);
+            String[] entity = docDetails[7].split(",");
+            List<Pair<String, Double>> entities = new ArrayList<>();
+            for (int i = 0; i < entity.length; i++) {
+                String[] tmp = entity[i].split("\\*");
+                Double Rank = Double.parseDouble(tmp[1]);
+                String term = tmp[0];
+                entities.add(new Pair(term, Rank));
             }
-            fr.close();
+            Document d = new Document(docID, maxTF, uniqueTerms, date, city, language, size);
+            d.setPrimaryEntities(entities);
+            documents.put(docID, d);
+            line = br.readLine();
+        }
+        fr.close();
+    }
+
+    private void loadDictionary(String path, boolean stem) throws Exception {
+        dictionary = new ConcurrentHashMap<>();
+        if (stem)
+            path = path + "\\stemmed";
+        FileReader fr = new FileReader(path + "\\dictionary.txt");
+        BufferedReader br = new BufferedReader(fr);
+        String line = br.readLine();
+        String s = "";
+        while (line != null) {
+            String[] termDetails = line.split("#");
+            String term = termDetails[0];
+            int termFreq = Integer.parseInt(termDetails[1]);
+            int docFreq = Integer.parseInt(termDetails[2]);
+            int postingLine = Integer.parseInt(termDetails[3]);
+            dictionary.put(term, new Term(term, termFreq, docFreq, postingLine));
+            line = br.readLine();
+        }
+        fr.close();
     }
 
     /**
@@ -231,19 +245,116 @@ public class SearchEngine {
     public double start() {
         long StartTime = System.nanoTime();
         readFile.read();
+        //setCitiesDocs();
+        save();
+        //saveDictionary();
+        //saveCities();
+        //saveTfIdf();
         try {
             FileUtils.deleteDirectory(new File("C:\\TempFiles"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         long EndTime = System.nanoTime();
         double totalTime = (EndTime - StartTime) / 1000000000.0;
         searcher = new Searcher();
-        tfidfToFile();
         return totalTime;
     }
 
-    private void tfidfToFile() {
+    private void save(){
+        try {
+            Thread t1 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String path = postingPath;
+                        if (stem)
+                            path = path + "\\stemmed";
+                        FileWriter fw = new FileWriter(path + "\\dictionary.txt", true);
+                        BufferedWriter bw = new BufferedWriter(fw);
+                        List<String> sorted = new ArrayList<>();
+                        sorted.addAll(SearchEngine.dictionary.keySet());
+                        Collections.sort(sorted, new SortIgnoreCase());
+                        for (int i = 0; i < sorted.size(); i++) {
+                            String term = sorted.get(i);
+                            Term t = SearchEngine.dictionary.get(term);
+                            String s = term + "#" + t.termFreq + "#" + t.docFreq + "#" + t.postingLine;
+                            bw.write(s);
+                            bw.newLine();
+                        }
+                        bw.flush();
+                        fw.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            Thread t2 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String path = postingPath;
+                        if (stem)
+                            path = path + "\\stemmed";
+                        FileWriter fw = new FileWriter(path + "\\cities.txt", true);
+                        BufferedWriter bw = new BufferedWriter(fw);
+                        List<String> sorted = new ArrayList<>();
+                        sorted.addAll(SearchEngine.cities.keySet());
+                        Collections.sort(sorted, new SortIgnoreCase());
+                        for (int i = 0; i < sorted.size(); i++) {
+                            String city = sorted.get(i);
+                            City c = SearchEngine.cities.get(city);
+                            String s = city + "," + c.getState() + "," + c.getPopulation() + "," + c.getCurrency() + ",";
+                            LinkedHashSet<Document> docs = c.getDocuments();
+                            Iterator<Document> it = docs.iterator();
+                            while (it.hasNext()) {
+                                Document doc = it.next();
+                                if (it.hasNext())
+                                    s = s + doc.getDocID() + "~";
+                                else
+                                    s = s + doc.getDocID();
+                            }
+                            bw.write(s);
+                            bw.newLine();
+                        }
+                        bw.flush();
+                        fw.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            Thread t3 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String path = postingPath;
+                        if (stem)
+                            path = path + "\\stemmed";
+                        BufferedWriter bw = new BufferedWriter(new FileWriter(path + "\\tfidf.txt"));
+                        Iterator<Document> it = documents.values().iterator();
+                        while (it.hasNext()) {
+                            Document d = it.next();
+                            String s = d.getDocID() + "~" + d.getSumOfSquareTFIDF();
+                            bw.write(s);
+                            bw.newLine();
+                        }
+                        bw.flush();
+                        bw.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            t1.start();
+            t2.start();
+            t3.start();
+            t1.join();
+            t2.join();
+            t3.join();
+        }catch (Exception e) {e.printStackTrace();}
+
+    }
+
+    private void saveTfIdf() {
         try {
             String path = postingPath;
             if (stem)
@@ -303,7 +414,7 @@ public class SearchEngine {
         return results;
     }
 
-    public void saveResults(String path){
+    public void saveResults(String path) {
         resultsToFile(path, searcher.getResults());
     }
 
@@ -331,8 +442,92 @@ public class SearchEngine {
         }
     }
 
+    private void saveDictionary() {
+        try {
+            String path = postingPath;
+            if (stem)
+                path = path + "\\stemmed";
+            FileWriter fw = new FileWriter(path + "\\dictionary.txt", true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            List<String> sorted = new ArrayList<>();
+            sorted.addAll(SearchEngine.dictionary.keySet());
+            Collections.sort(sorted, new SortIgnoreCase());
+            for (int i = 0; i < sorted.size(); i++) {
+                String term = sorted.get(i);
+                Term t = SearchEngine.dictionary.get(term);
+                bw.write(term + "#" + t.termFreq + "#" + t.docFreq + "#" + t.postingLine);
+                bw.newLine();
+            }
+            bw.flush();
+            fw.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveCities() {
+        try {
+            String path = postingPath;
+            if (stem)
+                path = path + "\\stemmed";
+            FileWriter fw = new FileWriter(path + "\\cities.txt", true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            List<String> sorted = new ArrayList<>();
+            sorted.addAll(SearchEngine.cities.keySet());
+            Collections.sort(sorted, new SortIgnoreCase());
+            for (int i = 0; i < sorted.size(); i++) {
+                String city = sorted.get(i);
+                City c = SearchEngine.cities.get(city);
+                String s = city + "," + c.getState() + "," + c.getPopulation() + "," + c.getCurrency() + ",";
+                LinkedHashSet<Document> docs = c.getDocuments();
+                Iterator<Document> it = docs.iterator();
+                while (it.hasNext()) {
+                    Document doc = it.next();
+                    if (it.hasNext())
+                        s = s + doc.getDocID() + "~";
+                    else
+                        s = s + doc.getDocID();
+                }
+                bw.write(s);
+                bw.newLine();
+            }
+            bw.flush();
+            fw.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public List<Pair<String, Double>> getEntities(String docID) {
         return documents.get(docID).getPrimaryEntities();
+    }
+
+    private void setCitiesDocs() {
+        String path = postingPath;
+        if (stem)
+            path = path + "\\stemmed";
+        Iterator<City> it = cities.values().iterator();
+        while (it.hasNext()) {
+            City c = it.next();
+            String city = c.getCity();
+            Term t = null;
+            if (dictionary.contains(city))
+                t = dictionary.get(city);
+            else if(dictionary.contains(city.toLowerCase()))
+                t = dictionary.get(city.toLowerCase());
+            if (t != null) {
+                try {
+                    Stream<String> lines = Files.lines(Paths.get(path + "\\" + Character.toLowerCase(city.charAt(0)) + ".txt"));
+                    String line = lines.skip(t.postingLine - 1).findFirst().get();
+                    String[] split = line.split("#!");
+                    String[] split2 = split[1].split("!");
+                    for (int i = 0; i < split2.length; i++) {
+                        String[] split3 = split2[i].split("\\*");
+                        c.addDocument(documents.get(split3[0]));
+                    }
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+        }
     }
 
     /**

@@ -1,5 +1,10 @@
 package sample;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.decimal4j.util.DoubleRounder;
+
+import java.net.URL;
 import java.util.LinkedHashSet;
 
 public class City {
@@ -27,6 +32,10 @@ public class City {
         this.documents = new LinkedHashSet<>();
     }
 
+    public void setDetailsFromAPI(String api){
+        getDetails(api);
+    }
+
     public String getCity() {
         return city;
     }
@@ -49,5 +58,62 @@ public class City {
 
     public void setDocuments(LinkedHashSet<Document> documents) {
         this.documents.addAll(documents);
+    }
+
+    public void addDocument(Document doc){
+        documents.add(doc);
+    }
+
+    private void getDetails(String api) {
+        try {
+            URL url = new URL(api + city);
+            if (url != null) {
+
+                String page = IOUtils.toString(url.openConnection().getInputStream());
+
+                currency = StringUtils.substringBetween(page, '"' + "geobytescurrencycode" + '"' + ":" + '"', '"' + ",");
+                if (currency == null || currency.equals(""))
+                    currency = "X";
+                String pop = StringUtils.substringBetween(page, '"' + "geobytespopulation" + '"' + ":" + '"', '"' + ",");
+                if (pop == null || pop.equals(""))
+                    population = "X";
+                else
+                    population = getNumber(pop);
+                state = StringUtils.substringBetween(page, '"' + "geobytescountry" + '"' + ":" + '"', '"' + ",");
+                if (state == null || state.equals(""))
+                    state = "X";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getNumber(String s) {
+        double num = Double.parseDouble(s);
+        String Snum = "";
+        if (num >= 1000000000) {
+            num = num / 1000000000;
+            num = DoubleRounder.round(num, 2);
+            if (num == (int) num)
+                Snum = (int) num + "B";
+            else
+                Snum = num + "B";
+        } else if (num >= 1000000) {
+            num = num / 1000000;
+            num = DoubleRounder.round(num, 2);
+            if (num == (int) num)
+                Snum = (int) num + "M";
+            else
+                Snum = num + "M";
+        } else if (num >= 1000) {
+            num = num / 1000;
+            num = DoubleRounder.round(num, 2);
+            if (num == (int) num)
+                Snum = (int) num + "K";
+            else
+                Snum = num + "K";
+        } else
+            Snum = s;
+        return Snum;
     }
 }

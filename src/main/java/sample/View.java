@@ -269,7 +269,7 @@ public class View {
         }catch (Exception e) { e.printStackTrace(); }
     }
 
-    public ConcurrentHashMap<String, String> getCities(){
+    public ConcurrentHashMap<String, City> getCities(){
         return control.getCities();
     }
 

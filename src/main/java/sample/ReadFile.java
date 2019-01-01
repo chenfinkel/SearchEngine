@@ -29,6 +29,7 @@ public class ReadFile {
     public void read(){
         File mainFolder = new File(SearchEngine.corpusPath);
         File[] folders = mainFolder.listFiles();
+        long StartTime = System.nanoTime();
             for (File folder : folders) {
             if(!folder.getName().equals("stop_words.txt"))
                 exeServ.submit(new ReadThread(folder));
@@ -37,9 +38,14 @@ public class ReadFile {
         try {
             exeServ.awaitTermination(30, TimeUnit.MINUTES);
         } catch (Exception e) { e.printStackTrace(); }
-        System.out.println("finish parse");
+        long EndTime = System.nanoTime();
+        double totalTime = (EndTime - StartTime) / 1000000000.0;
+        System.out.println("finish parse, time: " + totalTime);
         Indexer indexer = new Indexer();
+        StartTime = System.nanoTime();
         indexer.Merge();
-        System.out.println("finish index");
+        EndTime = System.nanoTime();
+        totalTime = (EndTime - StartTime) / 1000000000.0;
+        System.out.println("finish index, time: " + totalTime);
     }
 }

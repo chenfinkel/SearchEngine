@@ -1,10 +1,14 @@
 package sample;
 
 import javafx.util.Pair;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.decimal4j.util.DoubleRounder;
 import sun.awt.Mutex;
 
 import javax.swing.text.html.HTMLDocument;
 import java.io.*;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -19,14 +23,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class Indexer {
 
-    /**
-     * the id of the indexer
-     */
+    /** the id of the indexer*/
     public static int index = 0;
 
-    /**
-     * mutex for indexer's id
-     */
+    /** mutex for indexer's id*/
     public static Mutex m = new Mutex();
 
 
@@ -51,11 +51,6 @@ public class Indexer {
     private LinkedHashSet<String> docs;
 
     /**
-     * a list of the cities of the documents
-     */
-    private LinkedHashSet<String> cities;
-
-    /**
      * a list of the languages of the file
      */
     private LinkedHashSet<String> languages;
@@ -72,7 +67,6 @@ public class Indexer {
         terms = new LinkedHashMap<>();
         termsDocs = new LinkedHashMap<>();
         docs = new LinkedHashSet<>();
-        cities = new LinkedHashSet<>();
         languages = new LinkedHashSet<>();
         m.lock();
         index++;
@@ -110,14 +104,11 @@ public class Indexer {
 
             writeTempFile("C:\\TempFiles\\docs\\file" + fileIndex + ".txt", docs);
 
-            writeTempFile("C:\\TempFiles\\city\\file" + fileIndex + ".txt", cities);
-
             writeTempFile("C:\\TempFiles\\languages\\file" + fileIndex + ".txt", languages);
 
             terms = new LinkedHashMap<>();
             termsDocs = new LinkedHashMap<>();
             docs = new LinkedHashSet<>();
-            cities = new LinkedHashSet<>();
             languages = new LinkedHashSet<>();
 
         } catch (Exception e) {
@@ -128,9 +119,6 @@ public class Indexer {
     public void saveDetails(HashMap<String, Integer> docTerms, Document doc) {
         String DocID = doc.getDocID();
         String city = doc.getCity();
-        if (!city.equals("X")) {
-            cities.add(city);
-        }
         String language = doc.getLanguage();
         if (!language.equals("X"))
             languages.add(language);
@@ -145,10 +133,10 @@ public class Indexer {
             insert(termString, docTermFreq, DocID);
         }
         SearchEngine.documents.put(DocID, new Document(DocID,maxTF,docTerms.size(),doc.getDate(),city,language,docSize));
+        Document d = SearchEngine.documents.get(DocID);
         String s = DocID + "~" + maxTF + "~" + docTerms.size() + "~" + doc.getDate() + "~" + city + "~" + language + "~" + docSize + "~";
         List<Pair<String, Double>> primaryEntities = getPrimaryEntities(docTerms, maxTF);
         if (primaryEntities != null) {
-            Document d = SearchEngine.documents.get(DocID);
             d.setPrimaryEntities(primaryEntities);
             int i;
             for (i = 0; i < primaryEntities.size() - 1; i++) {
@@ -157,6 +145,17 @@ public class Indexer {
             s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue();
         }
         docs.add(s);
+        if (!city.equals("X")) {
+            City c;
+            if (!SearchEngine.cities.contains(city)){
+                c = new City(city);
+                SearchEngine.cities.put(city, c);
+                c.setDetailsFromAPI("http://getcitydetails.geobytes.com/GetCityDetails?fqcn=");
+            } else
+                c = SearchEngine.cities.get(city);
+            c.addDocument(d);
+
+        }
     }
 
     private void insert(String termString, int docTermFreq, String DocID) {
@@ -266,7 +265,6 @@ public class Indexer {
             postPath = SearchEngine.postingPath;
         ExecutorService exeServ = Executors.newFixedThreadPool(3);
         exeServ.submit(new mergeThread("docs", postPath, this));
-        exeServ.submit(new mergeThread("city", postPath, this));
         exeServ.submit(new mergeThread("languages", postPath, this));
         exeServ.shutdown();
         try {
@@ -275,7 +273,6 @@ public class Indexer {
             e.printStackTrace();
         }
         mergeDirectory();
-        saveDictionary();
     }
 
     /**
@@ -450,6 +447,7 @@ public class Indexer {
             while (line != null) {
                 String[] splitt = line.split("~");
                 String term = splitt[0];
+                City c = SearchEngine.cities.get(term);
                 Term t = new Term(term);
                 t.termFreq = Integer.parseInt(splitt[1]);
                 t.docFreq = Integer.parseInt(splitt[2].split("#")[0]);
@@ -463,32 +461,15 @@ public class Indexer {
                     Integer tfDoc = Integer.parseInt(split3[1]);
                     double idf = Math.log(SearchEngine.documents.size() / t.docFreq);
                     double tfidf = tfDoc * idf;
-                    SearchEngine.documents.get(docID).addTFIDF(tfidf);
+                    Document d = SearchEngine.documents.get(docID);
+                    d.addTFIDF(tfidf);
+                    if (c != null)
+                        c.addDocument(d);
                 }
 
                 line = br.readLine();
             }
             fr.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void saveDictionary() {
-        try {
-            FileWriter fw = new FileWriter(postPath + "\\dictionary.txt", true);
-            BufferedWriter bw = new BufferedWriter(fw);
-            List<String> sorted = new ArrayList<>();
-            sorted.addAll(SearchEngine.dictionary.keySet());
-            Collections.sort(sorted, new Indexer.SortIgnoreCase());
-            for (int i = 0; i < sorted.size(); i++) {
-                String term = sorted.get(i);
-                Term t = SearchEngine.dictionary.get(term);
-                bw.write(term + "#" + t.termFreq + "#" + t.docFreq + "#" + t.postingLine);
-                bw.newLine();
-            }
-            bw.flush();
-            fw.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

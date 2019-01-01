@@ -76,7 +76,7 @@ public class Controller {
         return se.getEntities(docID);
     }
 
-    public ConcurrentHashMap<String,String> getCities() {
+    public ConcurrentHashMap<String,City> getCities() {
         return se.cities;
     }
 
