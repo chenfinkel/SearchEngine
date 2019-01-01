@@ -71,17 +71,21 @@ public class City {
 
                 String page = IOUtils.toString(url.openConnection().getInputStream());
 
-                currency = StringUtils.substringBetween(page, '"' + "geobytescurrencycode" + '"' + ":" + '"', '"' + ",");
-                if (currency == null || currency.equals(""))
+                String curr = StringUtils.substringBetween(page, '"' + "geobytescurrencycode" + '"' + ":" + '"', '"' + ",");
+                if (curr == null || curr.equals(""))
                     currency = "X";
+                else
+                    currency = curr;
                 String pop = StringUtils.substringBetween(page, '"' + "geobytespopulation" + '"' + ":" + '"', '"' + ",");
                 if (pop == null || pop.equals(""))
                     population = "X";
                 else
                     population = getNumber(pop);
-                state = StringUtils.substringBetween(page, '"' + "geobytescountry" + '"' + ":" + '"', '"' + ",");
-                if (state == null || state.equals(""))
+                String st = StringUtils.substringBetween(page, '"' + "geobytescountry" + '"' + ":" + '"', '"' + ",");
+                if (st == null || st.equals(""))
                     state = "X";
+                else
+                    state = st;
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -147,14 +147,13 @@ public class Indexer {
         docs.add(s);
         if (!city.equals("X")) {
             City c;
-            if (!SearchEngine.cities.contains(city)){
+            if (!SearchEngine.cities.containsKey(city)){
                 c = new City(city);
                 SearchEngine.cities.put(city, c);
                 c.setDetailsFromAPI("http://getcitydetails.geobytes.com/GetCityDetails?fqcn=");
             } else
                 c = SearchEngine.cities.get(city);
             c.addDocument(d);
-
         }
     }
 
