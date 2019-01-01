@@ -110,87 +110,106 @@ public class SearchEngine {
             searcher = new Searcher();
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
 
-    private void loadLanguages(String path, boolean stem) throws Exception {
-        FileReader fr = new FileReader(path + "\\languages.txt");
-        BufferedReader br = new BufferedReader(fr);
-        String line = br.readLine();
-        while (line != null) {
-            languages.put(line, line);
-            line = br.readLine();
-        }
-        fr.close();
-    }
-
-    private void loadCities(String path, boolean stem) throws Exception {
-        FileReader fr = new FileReader(path + "\\cities.txt");
-        BufferedReader br = new BufferedReader(fr);
-        String line = br.readLine();
-        while (line != null) {
-            String[] details = line.split(",");
-            String city = details[0];
-            String state = details[1];
-            String population = details[2];
-            String currency = details[3];
-            cities.put(city, new City(city, state, population, currency));
-            City c = cities.get(city);
-            String[] docs = details[4].split("~");
-            for (int i = 0; i < docs.length; i++)
-                c.addDocument(documents.get(docs[i]));
-            line = br.readLine();
-        }
-        fr.close();
-    }
-
-    private void loadTFIDF(String path, boolean stem) throws Exception {
-        if (stem)
-            path = path + "\\stemmed";
-        FileReader fr = new FileReader(path + "\\tfidf.txt");
-        BufferedReader br = new BufferedReader(fr);
-        String line = br.readLine();
-        while (line != null) {
-            String[] docDetails = line.split("~");
-            String docID = docDetails[0];
-            double tfidf = Double.parseDouble(docDetails[1]);
-            documents.get(docID).setSumOfSquareTFIDF(tfidf);
-            line = br.readLine();
-        }
-        fr.close();
-    }
-
-    private void loadDocs(String path, boolean stem) throws Exception {
-        if (stem)
-            path = path + "\\stemmed";
-        FileReader fr = new FileReader(path + "\\docs.txt");
-        BufferedReader br = new BufferedReader(fr);
-        String line = br.readLine();
-        String s = "";
-        while (line != null) {
-            String[] docDetails = line.split("~");
-            String docID = docDetails[0];
-            int maxTF = Integer.parseInt(docDetails[1]);
-            int uniqueTerms = Integer.parseInt(docDetails[2]);
-            String date = docDetails[3];
-            String city = docDetails[4];
-            String language = docDetails[5];
-            int size = Integer.parseInt(docDetails[6]);
-            String[] entity = docDetails[7].split(",");
-            List<Pair<String, Double>> entities = new ArrayList<>();
-            for (int i = 0; i < entity.length; i++) {
-                String[] tmp = entity[i].split("\\*");
-                Double Rank = Double.parseDouble(tmp[1]);
-                String term = tmp[0];
-                entities.add(new Pair(term, Rank));
+    private void loadLanguages(String path, boolean stem) {
+        try {
+            FileReader fr = new FileReader(path + "\\languages.txt");
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            while (line != null) {
+                languages.put(line, line);
+                line = br.readLine();
             }
-            Document d = new Document(docID, maxTF, uniqueTerms, date, city, language, size);
-            d.setPrimaryEntities(entities);
-            documents.put(docID, d);
-            line = br.readLine();
+            fr.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        fr.close();
+    }
+
+    private void loadCities(String path, boolean stem) {
+        try {
+            FileReader fr = new FileReader(path + "\\cities.txt");
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            while (line != null) {
+                String[] details = line.split("#");
+                String city = details[0];
+                String state = details[1];
+                String population = details[2];
+                String currency = details[3];
+                cities.put(city, new City(city, state, population, currency));
+                City c = cities.get(city);
+                String[] docs = details[4].split("~");
+                for (int i = 0; i < docs.length; i++)
+                    c.addDocument(documents.get(docs[i]));
+                line = br.readLine();
+            }
+            fr.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadTFIDF(String path, boolean stem) {
+        try {
+            if (stem)
+                path = path + "\\stemmed";
+            FileReader fr = new FileReader(path + "\\tfidf.txt");
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            while (line != null) {
+                String[] docDetails = line.split("~");
+                String docID = docDetails[0];
+                double tfidf = Double.parseDouble(docDetails[1]);
+                documents.get(docID).setSumOfSquareTFIDF(tfidf);
+                line = br.readLine();
+            }
+            fr.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadDocs(String path, boolean stem) {
+        try {
+            if (stem)
+                path = path + "\\stemmed";
+            FileReader fr = new FileReader(path + "\\docs.txt");
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            String s = "";
+            while (line != null) {
+                String[] docDetails = line.split("~");
+                String docID = docDetails[0];
+                int maxTF = Integer.parseInt(docDetails[1]);
+                int uniqueTerms = Integer.parseInt(docDetails[2]);
+                String date = docDetails[3];
+                String city = docDetails[4];
+                String language = docDetails[5];
+                int size = Integer.parseInt(docDetails[6]);
+                Document d = new Document(docID, maxTF, uniqueTerms, date, city, language, size);
+                if (docDetails.length == 8) {
+                    String[] entity = docDetails[7].split("#");
+                    List<Pair<String, Double>> entities = new ArrayList<>();
+                    for (int i = 0; i < entity.length; i++) {
+                        String[] tmp = entity[i].split("\\*");
+                        Double Rank = Double.parseDouble(tmp[1]);
+                        String term = tmp[0];
+                        entities.add(new Pair(term, Rank));
+                    }
+                    d.setPrimaryEntities(entities);
+                }
+                documents.put(docID, d);
+                line = br.readLine();
+            }
+            fr.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void loadDictionary(String path, boolean stem) throws Exception {
@@ -245,21 +264,19 @@ public class SearchEngine {
     public double start() {
         long StartTime = System.nanoTime();
         readFile.read();
-        //setCitiesDocs();
         save();
-        //saveDictionary();
-        //saveCities();
-        //saveTfIdf();
         try {
             FileUtils.deleteDirectory(new File("C:\\TempFiles"));
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         long EndTime = System.nanoTime();
         double totalTime = (EndTime - StartTime) / 1000000000.0;
         searcher = new Searcher();
         return totalTime;
     }
 
-    private void save(){
+    private void save() {
         try {
             Thread t1 = new Thread(new Runnable() {
                 @Override
@@ -302,7 +319,7 @@ public class SearchEngine {
                         for (int i = 0; i < sorted.size(); i++) {
                             String city = sorted.get(i);
                             City c = SearchEngine.cities.get(city);
-                            String s = city + "," + c.getState() + "," + c.getPopulation() + "," + c.getCurrency() + ",";
+                            String s = city + "#" + c.getState() + "#" + c.getPopulation() + "#" + c.getCurrency() + "#";
                             LinkedHashSet<Document> docs = c.getDocuments();
                             Iterator<Document> it = docs.iterator();
                             while (it.hasNext()) {
@@ -350,7 +367,9 @@ public class SearchEngine {
             t1.join();
             t2.join();
             t3.join();
-        }catch (Exception e) {e.printStackTrace();}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -513,7 +532,7 @@ public class SearchEngine {
             Term t = null;
             if (dictionary.contains(city))
                 t = dictionary.get(city);
-            else if(dictionary.contains(city.toLowerCase()))
+            else if (dictionary.contains(city.toLowerCase()))
                 t = dictionary.get(city.toLowerCase());
             if (t != null) {
                 try {
@@ -525,7 +544,9 @@ public class SearchEngine {
                         String[] split3 = split2[i].split("\\*");
                         c.addDocument(documents.get(split3[0]));
                     }
-                } catch (Exception e) { e.printStackTrace(); }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

@@ -172,8 +172,8 @@ public class Ranker {
     }
 
     private double BM25(Term t, Document doc, int tfDoc, int tfQuery) {
-        double B = 0.35;
-        double K = 1.2;
+        double B = 0.315;
+        double K = 1.155;
         int length = doc.getSize();
         int df = t.docFreq;
         int numOfDocs = SearchEngine.documents.size();

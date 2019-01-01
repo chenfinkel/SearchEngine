@@ -140,7 +140,7 @@ public class Indexer {
             d.setPrimaryEntities(primaryEntities);
             int i;
             for (i = 0; i < primaryEntities.size() - 1; i++) {
-                s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue() + ",";
+                s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue() + "#";
             }
             s = s + primaryEntities.get(i).getKey() + "*" + primaryEntities.get(i).getValue();
         }
