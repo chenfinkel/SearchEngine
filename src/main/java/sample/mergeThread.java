@@ -13,23 +13,27 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** a thread for merging temporary index files */
-public class mergeThread extends Thread{
+/**
+ * a thread for merging temporary index files
+ */
+public class mergeThread extends Thread {
 
-    /** the type of file to merge */
+    /**
+     * the type of file to merge
+     */
     private String file;
 
-    /** indexer */
-    private Indexer indexer;
-
-    /** the location of the merged files */
+    /**
+     * the location of the merged files
+     */
     private String postPath;
 
-    /** constructor */
+    /**
+     * constructor
+     */
     public mergeThread(String file, String post, Indexer index) {
         this.file = file;
         postPath = post;
-        indexer = index;
     }
 
     /**
@@ -64,27 +68,48 @@ public class mergeThread extends Thread{
                         break;
                     } else
                         mergeFiles(f1, f2, index2, false, file);
-
                 }
                 files = folders.listFiles();
                 size = files.length;
             }
-            if (file.equals("languages")){
-                LinkedHashMap<String, String> languages = new LinkedHashMap<>();
-                FileReader fr = new FileReader(postPath + "\\languages.txt");
-                BufferedReader br = new BufferedReader(fr);
-                String line = br.readLine();
-                while (line != null) {
-                    languages.put(line, line);
-                    line = br.readLine();
-                }
-                SearchEngine.languages.putAll(languages);
-                fr.close();
-            }
+            if(file.equals("languages"))
+                saveLanguages();
+            if(file.equals("city"))
+                saveCities();
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);
         }
+    }
+
+    private void saveLanguages() throws Exception {
+        LinkedHashMap<String, String> list = new LinkedHashMap<>();
+        FileReader fr = new FileReader(postPath + "\\languages.txt");
+        BufferedReader br = new BufferedReader(fr);
+        String line = br.readLine();
+        while (line != null) {
+            list.put(line, line);
+            line = br.readLine();
+        }
+        SearchEngine.languages.putAll(list);
+        fr.close();
+    }
+
+    private void saveCities() throws Exception {
+        LinkedHashMap<String, City> list = new LinkedHashMap<>();
+        FileReader fr = new FileReader(postPath + "\\cities.txt");
+        BufferedReader br = new BufferedReader(fr);
+        String line = br.readLine();
+        while (line != null) {
+            String[] details = line.split(",");
+            String city = details[0];
+            String state = details[1];
+            String population =
+            list.put(splitLine, splitLine);
+            line = br.readLine();
+        }
+        SearchEngine.cities.putAll(list);
+        fr.close();
     }
 
     private void mergeFiles(File left, File right, int TmpIndex, boolean flag, String dir) {
@@ -99,9 +124,6 @@ public class mergeThread extends Thread{
             BufferedReader brLeft = new BufferedReader(frLeft);
             FileReader frRight = new FileReader(right.getPath());
             BufferedReader brRight = new BufferedReader(frRight);
-            int leftIdx = 0;
-            int rightIdx = 0;
-            String newLine = "";
             String leftLine = brLeft.readLine();
             String rightLine = brRight.readLine();
             while (leftLine != null && rightLine != null) {
@@ -165,8 +187,6 @@ public class mergeThread extends Thread{
             BufferedReader brLeft = new BufferedReader(frLeft);
             FileReader frRight = new FileReader(right.getPath());
             BufferedReader brRight = new BufferedReader(frRight);
-            int leftIdx = 0;
-            int rightIdx = 0;
             String newLine = "";
             String leftLine = brLeft.readLine();
             String rightLine = brRight.readLine();
@@ -279,7 +299,7 @@ public class mergeThread extends Thread{
         return Snum;
     }
 
-    private void copyCities(File file){
+    private void copyCities(File file) {
         try {
             FileWriter fw = new FileWriter(postPath + "\\cities.txt", true);
             BufferedWriter bw = new BufferedWriter(fw);
@@ -294,7 +314,9 @@ public class mergeThread extends Thread{
             bw.flush();
             fw.close();
             fr.close();
-        }catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 

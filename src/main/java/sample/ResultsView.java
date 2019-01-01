@@ -6,17 +6,17 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Pair;
 
+import java.io.File;
 import java.util.*;
 
 public class ResultsView {
@@ -27,10 +27,17 @@ public class ResultsView {
 
     @FXML
     private ListView results;
+    @FXML
+    public TextField Results;
+    @FXML
+    public Button browseResults;
+
 
     private ArrayList<String> docs = new ArrayList<>();
 
     private ArrayList<Button> buttons = new ArrayList<>();
+
+
 
     public void setView(View view) {
         this.view = view;
@@ -52,7 +59,7 @@ public class ResultsView {
                     HBox hbox = new HBox();
                     Label label = new Label(it.next().getKey().getDocID());
                     docs.add(label.getText());
-                    Button btn = new Button("Get Primary Entities");
+                    Button btn = new Button("Show Primary Entities");
                     btn.setOnAction(new EventHandler<ActionEvent>() {
                         @Override public void handle(ActionEvent e) {
                             getEntities((Button)e.getSource());
@@ -86,7 +93,22 @@ public class ResultsView {
         dialogVbox.getChildren().addAll(new Text(s));
         Scene dialogScene = new Scene(dialogVbox, 300, 300);
         dialog.setScene(dialogScene);
+        dialog.setTitle("Primary Entities");
         dialog.show();
     }
 
+    public void saveResults(ActionEvent actionEvent) {
+        view.saveResults(Results.getText());
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setContentText("Results saved");
+        a.show();
+    }
+
+    public void browseResults(){
+        DirectoryChooser dc = new DirectoryChooser();
+        dc.setTitle("Choose Results Path");
+        File f = dc.showDialog(stage);
+        if (f != null)
+            Results.setText(f.getPath());
+    }
 }

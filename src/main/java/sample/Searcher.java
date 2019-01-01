@@ -70,4 +70,8 @@ public class Searcher {
     public boolean getSemantic(){
         return semantic;
     }
+
+    public void setCities(HashSet<String> cities) {
+        this.ranker.setCities(cities);
+    }
 }

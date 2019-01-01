@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.Pane?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="620.0" prefWidth="442.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.CitiesView">
+    <children>
+        <ListView fx:id="cities" prefHeight="543.0" prefWidth="442.0" />
+      <Button fx:id="select" layoutX="195.0" layoutY="566.0" mnemonicParsing="false" onAction="#select" text="Select" />
+    </children>
+</Pane>

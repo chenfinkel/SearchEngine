@@ -128,8 +128,9 @@ public class Indexer {
     public void saveDetails(HashMap<String, Integer> docTerms, Document doc) {
         String DocID = doc.getDocID();
         String city = doc.getCity();
-        if (!city.equals("X"))
+        if (!city.equals("X")) {
             cities.add(city);
+        }
         String language = doc.getLanguage();
         if (!language.equals("X"))
             languages.add(language);

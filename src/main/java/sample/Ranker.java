@@ -12,9 +12,12 @@ public class Ranker {
 
     private boolean semantic;
 
+    private HashSet<String> cities;
+
     public Ranker(double avdl, boolean semantic) {
         this.avdl = avdl;
         this.semantic = semantic;
+        cities = new HashSet<>();
     }
 
     public List<Map.Entry<Document,Double>> Rank(String title) {
@@ -30,9 +33,11 @@ public class Ranker {
             Iterator<Document> it = SearchEngine.documents.values().iterator();
             while (it.hasNext()) {
                 Document document = it.next();
-                double rank = CalcDocRank(queryTerms, termsDocs, document);
-                if (rank > 0)
-                    ranks.put(document, rank);
+                    if (cities.size() == 0 || cities.contains(document.getCity())){
+                        double rank = CalcDocRank(queryTerms, termsDocs, document);
+                        if (rank > 0)
+                            ranks.put(document, rank);
+                    }
             }
             List<Map.Entry<Document, Double>> sorted = new LinkedList<>(ranks.entrySet());
             Collections.sort(sorted, new Ranker.sort());
@@ -174,6 +179,10 @@ public class Ranker {
         double log = Math.log(numOfDocs + 1 / df);
         double ans = tfQuery * first/fifth * log;
         return ans;
+    }
+
+    public void setCities(HashSet<String> cities) {
+        this.cities.addAll(cities);
     }
 
     public class sort implements Comparator<Object> {

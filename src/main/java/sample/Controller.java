@@ -48,8 +48,8 @@ public class Controller {
         return se.getDictionary();
     }
 
-    public void loadDict(String path, boolean stem){
-        se.loadDict(path, stem);
+    public boolean loadDict(String path, boolean stem){
+        return se.loadDict(path, stem);
     }
 
     public ConcurrentHashMap<String, String> getLanguage(){
@@ -64,15 +64,23 @@ public class Controller {
     }
 
 
-    public List<QueryResult> RunSingleQuery(String query, boolean semantic) {
-        return se.RunSingleQuery(query, semantic);
+    public List<QueryResult> RunSingleQuery(String query, boolean semantic, HashSet<String> cities) {
+        return se.RunSingleQuery(query, semantic, cities);
     }
 
-    public List<QueryResult> RunMultipleQueries(String queryFilePath, boolean semantic) {
-        return se.RunMultipleQueries(queryFilePath, semantic);
+    public List<QueryResult> RunMultipleQueries(String queryFilePath, boolean semantic, HashSet<String> cities) {
+        return se.RunMultipleQueries(queryFilePath, semantic, cities);
     }
 
     public List<Pair<String, Double>> getEntities(String docID) {
         return se.getEntities(docID);
+    }
+
+    public ConcurrentHashMap<String,String> getCities() {
+        return se.cities;
+    }
+
+    public void saveResults(String path) {
+        se.saveResults(path);
     }
 }

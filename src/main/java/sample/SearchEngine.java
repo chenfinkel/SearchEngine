@@ -50,6 +50,7 @@ public class SearchEngine {
 
     public static ConcurrentHashMap<String, String> languages;
 
+    public static ConcurrentHashMap<String, City> cities;
     /**
      * the searcher of the engine
      */
@@ -68,6 +69,7 @@ public class SearchEngine {
         documents = new ConcurrentHashMap<>();
         dictionary = new ConcurrentHashMap<>();
         languages = new ConcurrentHashMap<>();
+        cities = new ConcurrentHashMap<>();
         Indexer.index = 0;
     }
 
@@ -83,7 +85,6 @@ public class SearchEngine {
         postingPath = pp;
         SearchEngine.stem = stem;
         readFile = new ReadFile();
-
     }
 
     /**
@@ -99,15 +100,38 @@ public class SearchEngine {
      * @param path - the location of the dictionary
      * @param stem - is stemmed or not
      */
-    public void loadDict(String path, boolean stem) {
-        loadDictionary(path, stem);
-        loadDocs(path, stem);
-        loadTFIDF(path, stem);
-        searcher = new Searcher();
+    public boolean loadDict(String path, boolean stem) {
+        try {
+            loadDictionary(path, stem);
+            loadDocs(path, stem);
+            loadTFIDF(path, stem);
+            load("languages", path, stem);
+            load("cities", path, stem);
+            searcher = new Searcher();
+            return true;
+        } catch (Exception e){
+            return false;
+        }
     }
 
-    private void loadTFIDF(String path, boolean stem) {
-        try {
+    private void load(String file, String path, boolean stem) throws Exception{
+            LinkedHashMap<String, String> list = new LinkedHashMap<>();
+            FileReader fr = new FileReader(path + "\\" + file + ".txt");
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            while (line != null) {
+                String splitLine = line.split(",")[0];
+                list.put(splitLine, splitLine);
+                line = br.readLine();
+                if (file.equals("languages"))
+                    SearchEngine.languages.putAll(list);
+                else if (file.equals("cities"))
+                    SearchEngine.cities.putAll(list);
+            }
+            fr.close();
+    }
+
+    private void loadTFIDF(String path, boolean stem)throws Exception {
             if (stem)
                 path = path + "\\stemmed";
             FileReader fr = new FileReader(path + "\\tfidf.txt");
@@ -121,13 +145,9 @@ public class SearchEngine {
                 line = br.readLine();
             }
             fr.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
-    private void loadDocs(String path, boolean stem) {
-        try {
+    private void loadDocs(String path, boolean stem)throws Exception {
             if (stem)
                 path = path + "\\stemmed";
             FileReader fr = new FileReader(path + "\\docs.txt");
@@ -143,18 +163,23 @@ public class SearchEngine {
                 String city = docDetails[4];
                 String language = docDetails[5];
                 int size = Integer.parseInt(docDetails[6]);
+                String[] entity = docDetails[7].split(",");
+                List<Pair<String, Double>> entities = new ArrayList<>();
+                for (int i = 0; i < entity.length; i++) {
+                    String[] tmp = entity[i].split("\\*");
+                    Double Rank = Double.parseDouble(tmp[1]);
+                    String term = tmp[0];
+                    entities.add(new Pair(term, Rank));
+                }
                 Document d = new Document(docID, maxTF, uniqueTerms, date, city, language, size);
+                d.setPrimaryEntities(entities);
                 documents.put(docID, d);
                 line = br.readLine();
             }
             fr.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
-    private void loadDictionary(String path, boolean stem) {
-        try {
+    private void loadDictionary(String path, boolean stem)throws Exception {
             dictionary = new ConcurrentHashMap<>();
             if (stem)
                 path = path + "\\stemmed";
@@ -172,9 +197,6 @@ public class SearchEngine {
                 line = br.readLine();
             }
             fr.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -235,8 +257,11 @@ public class SearchEngine {
             }
             bw.flush();
             bw.close();
-        }catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
     /**
      * @return the total number of unique terms in the corpus
      */
@@ -270,30 +295,32 @@ public class SearchEngine {
     }
 
 
-    public List<QueryResult> RunMultipleQueries(String queryFilePath, boolean semantic) {
+    public List<QueryResult> RunMultipleQueries(String queryFilePath, boolean semantic, HashSet<String> cities) {
         searcher.setSemantic(semantic);
+        searcher.setCities(cities);
         searcher.runQueries(queryFilePath);
         List<QueryResult> results = searcher.getResults();
-        resultsToFile(results);
         return results;
     }
 
-    public List<QueryResult> RunSingleQuery(String query, boolean semantic) {
+    public void saveResults(String path){
+        resultsToFile(path, searcher.getResults());
+    }
+
+    public List<QueryResult> RunSingleQuery(String query, boolean semantic, HashSet<String> cities) {
         searcher.setSemantic(semantic);
+        searcher.setCities(cities);
         searcher.runQuery(query);
         return searcher.getResults();
     }
 
-    private void resultsToFile(List<QueryResult> results) {
+    private void resultsToFile(String path, List<QueryResult> results) {
         try {
-            String path = postingPath;
-            if (stem)
-                path = path + "\\stemmed";
             BufferedWriter bw = new BufferedWriter(new FileWriter(path + "\\results.txt"));
             for (int i = 0; i < results.size(); i++) {
                 QueryResult qr = results.get(i);
                 String qrNum = qr.getQueryNumber();
-                List<Map.Entry<Document,Double>> docs = qr.getDocuments();
+                List<Map.Entry<Document, Double>> docs = qr.getDocuments();
                 for (int j = 0; j < docs.size(); j++)
                     bw.write(qrNum + " 0 " + docs.get(j).getKey().getDocID() + " 1 42.38 mt" + System.lineSeparator());
             }

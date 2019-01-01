@@ -3,7 +3,6 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -17,9 +16,9 @@
       <Button fx:id="browseCorpus" layoutX="400.0" layoutY="100.0" mnemonicParsing="false" onAction="#BrowseCorpus" text="Browse" />
       <Button fx:id="browsePosting" layoutX="400.0" layoutY="132.0" mnemonicParsing="false" onAction="#BrowsePosting" text="Browse" />
       <Button fx:id="startBtn" disable="true" layoutX="227.0" layoutY="247.0" mnemonicParsing="false" onAction="#Start" text="Index Corpus" />
-      <ChoiceBox fx:id="languages" layoutX="391.0" layoutY="319.0" prefWidth="150.0" />
-      <CheckBox fx:id="stemming" layoutX="307.0" layoutY="174.0" mnemonicParsing="false" text="Stemming?" />
-      <Button fx:id="resetBtn" disable="true" layoutX="325.0" layoutY="580.0" mnemonicParsing="false" onAction="#Reset" text="RESET" />
+      <ChoiceBox fx:id="languages" disable="true" layoutX="391.0" layoutY="319.0" prefWidth="150.0" />
+      <CheckBox fx:id="stemming" layoutX="307.0" layoutY="174.0" mnemonicParsing="false" onAction="#stemmedPressed" text="Stemming?" />
+      <Button fx:id="resetBtn" disable="true" layoutX="325.0" layoutY="589.0" mnemonicParsing="false" onAction="#Reset" text="RESET" />
       <Button fx:id="showDict" disable="true" layoutX="176.0" layoutY="308.0" mnemonicParsing="false" onAction="#showDict" text="Show Dictionary" />
       <Button fx:id="loadDict" disable="true" layoutX="391.0" layoutY="247.0" mnemonicParsing="false" onAction="#loadDict" text="Load Dictionary" />
       <Label alignment="CENTER" contentDisplay="CENTER" layoutX="265.0" layoutY="21.0" prefHeight="47.0" prefWidth="165.0" text="SEARCH ENGINE">
@@ -28,18 +27,17 @@
          </font></Label>
       <Label layoutX="391.0" layoutY="297.0" prefHeight="17.0" prefWidth="109.0" text="Text Languages" />
       <Line endX="100.0" endY="-18.0" layoutX="-63.0" layoutY="304.0" startX="724.0" startY="-18.0" />
-      <TextField fx:id="singleQry" layoutX="68.0" layoutY="417.0" promptText="Query" />
-      <TextField fx:id="queryFile" layoutX="68.0" layoutY="475.0" promptText="Queries File" />
-      <Button fx:id="browseQueries" disable="true" layoutX="228.0" layoutY="476.0" mnemonicParsing="false" onAction="#BrowseQueries" text="Browse" />
-      <Button fx:id="run" disable="true" layoutX="526.0" layoutY="438.0" mnemonicParsing="false" onAction="#Run" prefHeight="25.0" prefWidth="99.0" text="RUN" />
-      <CheckBox fx:id="semantic" layoutX="329.0" layoutY="479.0" mnemonicParsing="false" text="Semantic Improvement?" />
-      <Label layoutX="329.0" layoutY="395.0" prefHeight="17.0" prefWidth="109.0" text="Filter by city:" />
-      <ComboBox fx:id="cities" layoutX="329.0" layoutY="415.0" prefWidth="150.0" />
+      <TextField fx:id="singleQry" disable="true" layoutX="68.0" layoutY="400.0" promptText="Query" />
+      <TextField fx:id="queryFile" disable="true" layoutX="68.0" layoutY="458.0" promptText="Queries File" />
+      <Button fx:id="browseQueries" disable="true" layoutX="228.0" layoutY="459.0" mnemonicParsing="false" onAction="#BrowseQueries" text="Browse" />
+      <Button fx:id="run" disable="true" layoutX="526.0" layoutY="421.0" mnemonicParsing="false" onAction="#Run" prefHeight="25.0" prefWidth="99.0" text="RUN" />
+      <CheckBox fx:id="semantic" disable="true" layoutX="329.0" layoutY="462.0" mnemonicParsing="false" text="Semantic Improvement?" />
       <Button fx:id="set" layoutX="330.0" layoutY="202.0" mnemonicParsing="false" onAction="#setProperties" prefHeight="17.0" prefWidth="33.0" text="Set" />
       <Label layoutX="224.0" layoutY="68.0" text="Please enter the corpus and posting files paths:" />
       <Label layoutX="340.0" layoutY="251.0" text="Or" />
-      <Label layoutX="71.0" layoutY="393.0" text="Enter:" />
-      <Label layoutX="71.0" layoutY="450.0" text="Or" />
+      <Label layoutX="71.0" layoutY="376.0" text="Enter:" />
+      <Label layoutX="71.0" layoutY="433.0" text="Or" />
       <Line endX="100.0" endY="-18.0" layoutX="-63.0" layoutY="372.0" startX="724.0" startY="-18.0" />
+      <Button fx:id="filterCities" disable="true" layoutX="328.0" layoutY="400.0" mnemonicParsing="false" onAction="#selectCities" text="Filter By City" />
    </children>
 </AnchorPane>

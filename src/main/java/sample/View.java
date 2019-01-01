@@ -2,6 +2,8 @@ package sample;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -57,10 +59,15 @@ public class View {
     public Button browseQueries;
     @FXML
     public CheckBox semantic;
+    @FXML
+    public Button filterCities;
+
+    private HashSet<String> searchCities;
 
     public View() {
         control = new Controller();
         control.setView(this);
+        searchCities = new HashSet<>();
     }
 
     public void setController(Controller c) {
@@ -80,9 +87,36 @@ public class View {
         }
     }
 
+    private void enable(){
+        showDict.setDisable(false);
+        languages.setDisable(false);
+        singleQry.setDisable(false);
+        queryFile.setDisable(false);
+        browseQueries.setDisable(false);
+        filterCities.setDisable(false);
+        semantic.setDisable(false);
+        run.setDisable(false);
+        resetBtn.setDisable(false);
+    }
+
+    private void disable(){
+        showDict.setDisable(true);
+        languages.setDisable(true);
+        singleQry.setDisable(true);
+        queryFile.setDisable(true);
+        browseQueries.setDisable(true);
+        filterCities.setDisable(true);
+        semantic.setDisable(true);
+        run.setDisable(true);
+        resetBtn.setDisable(true);
+        startBtn.setDisable(true);
+        loadDict.setDisable(true);
+    }
+
     public void Start() {
         if (!Posting.getText().equals("") && !Corpus.getText().equals("")) {
             double time = control.startSE();
+            enable();
             ConcurrentHashMap<String, String> lang = control.getLanguage();
             languages.setItems(FXCollections.observableArrayList(lang.keySet()));
             int terms = control.getNumOfTerms();
@@ -96,13 +130,7 @@ public class View {
             Scene dialogScene = new Scene(dialogVbox, 300, 300);
             dialog.setScene(dialogScene);
             dialog.show();
-            startBtn.setDisable(true);
             loadDict.setDisable(true);
-            showDict.setDisable(false);
-            run.setDisable(false);
-            resetBtn.setDisable(false);
-            browseQueries.setDisable(false);
-
         } else {
             Alert a = new Alert(Alert.AlertType.INFORMATION);
             a.setContentText("YOU MUST ENTER CORPUS AND POSTING PATHS!");
@@ -116,6 +144,7 @@ public class View {
         File f = dc.showDialog(stage);
         if (f != null)
             Corpus.setText(f.getPath());
+        disable();
     }
 
     public void BrowsePosting() {
@@ -124,15 +153,16 @@ public class View {
         File f = dc.showDialog(stage);
         if (f != null)
             Posting.setText(f.getPath());
+        disable();
+    }
+
+    public void saveResults(String path){
+        control.saveResults(path);
     }
 
     public void Reset() {
         control.Reset();
-        startBtn.setDisable(false);
-        resetBtn.setDisable(true);
-        loadDict.setDisable(false);
-        browseQueries.setDisable(true);
-        showDict.setDisable(true);
+        disable();
         Posting.setText("");
         Corpus.setText("");
     }
@@ -170,22 +200,28 @@ public class View {
     public void loadDict(){
         String path = Posting.getText();
         boolean stem = stemming.isSelected();
+        boolean loaded = true;
         if (!path.equals(""))
-            control.loadDict(path, stem);
-        showDict.setDisable(false);
-        run.setDisable(false);
-        resetBtn.setDisable(false);
-        browseQueries.setDisable(false);
+            loaded = control.loadDict(path, stem);
+        if (loaded) {
+            enable();
+        ConcurrentHashMap<String, String> lang = control.getLanguage();
+        languages.setItems(FXCollections.observableArrayList(lang.keySet()));
+        startBtn.setDisable(true);
         Alert a = new Alert(Alert.AlertType.INFORMATION);
         a.setContentText("Dictionary loaded successfuly");
         a.show();
+        } else {
+            Alert a = new Alert(Alert.AlertType.INFORMATION);
+            a.setContentText("Not a valid posting folder");
+            a.show();
+        }
     }
 
     public void BrowseQueries(){
         FileChooser fc = new FileChooser();
         fc.setTitle("Choose Queries Path");
         File f = fc.showOpenDialog(stage);
-        //showDialog(stage);
         if (f != null)
             queryFile.setText(f.getPath());
     }
@@ -206,13 +242,14 @@ public class View {
             boolean isSemantic = semantic.isSelected();
             long StartTime = System.nanoTime();
             if (!query.equals(""))
-                results = control.RunSingleQuery(query, isSemantic);
+                results = control.RunSingleQuery(query, isSemantic, searchCities);
             else
-                results = control.RunMultipleQueries(queriesFile, isSemantic);
+                results = control.RunMultipleQueries(queriesFile, isSemantic, searchCities);
             long EndTime = System.nanoTime();
             double totalTime = (EndTime - StartTime)/1000000000.0;
             System.out.println("search time: " + totalTime);
             showResults(results);
+            searchCities = new HashSet<>();
         }
 
 
@@ -230,5 +267,31 @@ public class View {
             stage.setTitle("Results");
             stage.show();
         }catch (Exception e) { e.printStackTrace(); }
+    }
+
+    public ConcurrentHashMap<String, String> getCities(){
+        return control.getCities();
+    }
+
+    public void setCities(HashSet<String> cities) {
+        this.searchCities.addAll(cities);
+    }
+
+    public void selectCities(){
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("cities.fxml"));
+            Parent root1 = fxmlLoader.load();
+            CitiesView viewControl = fxmlLoader.getController();
+            viewControl.setView(this);
+            viewControl.setCities();
+            Stage stage = new Stage();
+            stage.setScene(new Scene(root1));
+            stage.setTitle("Choose cities:");
+            stage.show();
+        }catch (Exception e) { e.printStackTrace(); }
+    }
+
+    public void stemmedPressed(ActionEvent actionEvent) {
+        disable();
     }
 }
