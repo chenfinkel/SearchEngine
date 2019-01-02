@@ -75,7 +75,7 @@ public class Indexer {
     }
 
     /**
-     * this method saves the terms and documents, until the parser tell it to index a temporary posting file
+     * this method write temporary posting files
      */
     public void Index() {
         try {
@@ -116,6 +116,11 @@ public class Indexer {
         }
     }
 
+    /**
+     * this method save to main memory temporary details of parsed document
+     * @param docTerms the terms of a document
+     * @param doc the document parsed
+     */
     public void saveDetails(HashMap<String, Integer> docTerms, Document doc) {
         String DocID = doc.getDocID();
         String city = doc.getCity();
@@ -157,6 +162,7 @@ public class Indexer {
         }
     }
 
+    //insert terms to a temporary list and check case
     private void insert(String termString, int docTermFreq, String DocID) {
         if (termString.equals("")) return;
         String line = DocID + "*" + docTermFreq;
@@ -193,6 +199,7 @@ public class Indexer {
         termsDocs.get(termString).put(DocID, docTermFreq);
     }
 
+    //find the entities of the document - uppercase terms
     private LinkedHashMap<String,Integer> findEntities(HashMap<String, Integer> docTerms){
         LinkedHashMap<String, Integer> entities = new LinkedHashMap<>();
         Iterator<Map.Entry<String, Integer>> it = docTerms.entrySet().iterator();
@@ -212,6 +219,7 @@ public class Indexer {
         return entities;
     }
 
+    //finds the primary entities of a document
     private List<Pair<String, Double>> getPrimaryEntities(HashMap<String, Integer> docTerms, int maxTF){
         LinkedHashMap<String, Integer> entities = findEntities(docTerms);
         List<Pair<String, Double>> primaryEntities = null;
@@ -233,6 +241,7 @@ public class Indexer {
         return primaryEntities;
     }
 
+    //write temporary posting files to disk
     private void writeTempFile(String path, Collection<String> c) {
         try {
             FileWriter fw = new FileWriter(path);
@@ -285,6 +294,9 @@ public class Indexer {
         }
     }
 
+    /**
+     * comperator class for sorting entities by grade
+     */
     public class sortByGrade implements Comparator<Object> {
         public int compare(Object o1, Object o2) {
             Pair<Document, Double> s1 = (Pair<Document, Double>) o1;
@@ -299,6 +311,7 @@ public class Indexer {
         }
     }
 
+    //merge the temporary posting files
     private void mergeDirectory() {
         try {
             int index2 = 0;
@@ -329,6 +342,7 @@ public class Indexer {
         }
     }
 
+    //merge sort for merging posting files
     private void mergePosting(File left, File right, int TmpIndex) {
         try {
             FileWriter fw = new FileWriter("C:\\TempFiles\\posting\\tmp" + TmpIndex + ".txt");
@@ -403,6 +417,7 @@ public class Indexer {
         }
     }
 
+    //split posting files into files by first character
     private void splitLetters(String path) {
         try {
             FileReader fr = new FileReader(path);
@@ -437,6 +452,7 @@ public class Indexer {
         }
     }
 
+    //creates the dictionary of the engine from the posting file
     private void createDictionary(String path) {
         try {
             SearchEngine.dictionary = new ConcurrentHashMap<>();

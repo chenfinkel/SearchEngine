@@ -21,8 +21,10 @@ import javafx.util.Pair;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/** this class represents a display of documents cities to filter search*/
 public class CitiesView {
 
+    /** main view of the program */
     private View view;
 
     @FXML
@@ -30,12 +32,14 @@ public class CitiesView {
     @FXML
     private Button select;
 
+    /** cities chosen to filter by*/
     private HashSet<String> searchCities = new HashSet<>();
 
     public void setView(View view) {
         this.view = view;
     }
 
+    /** sets the display of the cities of the documents */
     public void setCities() {
         ConcurrentHashMap<String, City> city = view.getCities();
         ObservableList list = FXCollections.observableArrayList();
@@ -60,6 +64,7 @@ public class CitiesView {
         }
     }
 
+    //updates the cities chosen to filter by
     private void updateCities(CheckBox cb){
         String city = cb.getText();
         if(cb.isSelected())
@@ -70,6 +75,7 @@ public class CitiesView {
         }
     }
 
+    /** selects a city from the list*/
     public void select(){
         view.setCities(searchCities);
         Stage stage = (Stage)(select.getScene().getWindow());

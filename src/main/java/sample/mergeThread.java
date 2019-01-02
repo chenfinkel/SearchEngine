@@ -38,7 +38,7 @@ public class mergeThread extends Thread {
 
     /**
      * override
-     * this method merges the temporary files of the indexe
+     * this method merges the temporary files of the indexer
      */
     public void run() {
         try {
@@ -75,6 +75,7 @@ public class mergeThread extends Thread {
         }
     }
 
+    //saves languages to main memory
     private void saveLanguages() throws Exception {
         LinkedHashMap<String, String> list = new LinkedHashMap<>();
         FileReader fr = new FileReader(postPath + "\\languages.txt");
@@ -88,6 +89,7 @@ public class mergeThread extends Thread {
         fr.close();
     }
 
+    //merge sort for merging files
     private void mergeFiles(File left, File right, int TmpIndex, boolean flag, String dir) {
         try {
             FileWriter fw;

@@ -28,6 +28,7 @@ public class Parse {
         this.stopWordsPath = SearchEngine.corpusPath+"\\stop_words.txt";
     }
 
+    //parse a documents by a set of rules
     private LinkedHashMap<String, Integer> Parse(String text) {
         docTerms = new LinkedHashMap<>();
         ArrayList<String> list = tokenize(text);
@@ -156,15 +157,27 @@ public class Parse {
        return docTerms;
     }
 
+    /**
+     * done parsing a file and activate indexer
+     */
     public void doneParsing(){
         idxr.Index();
     }
 
+    /**
+     * parse a document
+     * @param doc the document to parse
+     */
     public void parseDocument(Document doc){
         Parse(doc.getText());
         idxr.saveDetails(docTerms, doc);
     }
 
+    /**
+     * parse a query
+     * @param query the query to parse
+     * @return parsed quert terms and frequencies
+     */
     public LinkedHashMap<String, Integer> parseQuery(String query){
         return Parse(query);
     }
@@ -189,6 +202,7 @@ public class Parse {
         return s;
     }
 
+    //check if a string represents a year
     private boolean isYear(String s) {
         if (s.length() == 4) {
             for (int i = 0; i < s.length(); i++) {
@@ -200,6 +214,7 @@ public class Parse {
         return false;
     }
 
+    //check if a string represents a day
     private boolean isDay(String s) {
         int day = -1;
         if (Character.isDigit(s.charAt(0)) && Character.isDigit(s.charAt(1)))
@@ -209,6 +224,7 @@ public class Parse {
         return false;
     }
 
+    //check if a string represents a month
     private String isMonth(String s){
         if (s.length() == 3) {
             if (s.equalsIgnoreCase("Jen"))
@@ -261,6 +277,7 @@ public class Parse {
         return "false";
     }
 
+    //load stop words file to main memory
     private HashSet<String> getStopWords(){
         HashSet<String> sw = new HashSet<>();
         Path path = Paths.get(stopWordsPath);
@@ -273,6 +290,7 @@ public class Parse {
         return sw;
     }
 
+    //parse price by a set of rules
     private String parsePrice(String s, String next) {
         String numNoCommas = "";
         for (int i = 0; i < s.length(); i++){
@@ -305,6 +323,7 @@ public class Parse {
         return price;
     }
 
+    //check if a string represents a number
     private boolean isANumber(String s) {
         boolean dotExist = false;
         for (int i = 0; i < s.length(); i++) {
@@ -322,6 +341,7 @@ public class Parse {
         return true;
     }
 
+    //check if a string represents a fraction
     private boolean isFraction(String s) {
         for(char c : s.toCharArray())
             if(!Character.isDigit(c) && c != '/')
@@ -329,6 +349,7 @@ public class Parse {
         return true;
     }
 
+    //parse large number
     private String ParseNumWithCommas(String s){
         String numNoCommas = "";
         for (int i = 0; i < s.length(); i++){
@@ -359,6 +380,7 @@ public class Parse {
         return Snum;
     }
 
+    //break the text into tokens
     private ArrayList<String> tokenize(String text) {
         String finalText = "";
         String[] splitByCommaSpace = text.split(", ");
