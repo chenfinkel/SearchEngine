@@ -76,6 +76,7 @@ public class ReadThread extends Thread {
         }catch (IOException e) { e.printStackTrace(); }
     }
 
+    //remove spaces in a string
     private String removeSpaces(String s){
         if (s == null || s.equals(""))
             return "X";

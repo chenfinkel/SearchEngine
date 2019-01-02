@@ -2,10 +2,19 @@ package sample;
 
 import java.util.*;
 
+/**
+ * this class reprsents a result for a query
+ */
 public class QueryResult {
 
+    /**
+     * the number of the query
+     */
     private String queryNumber;
 
+    /**
+     * the documents resulted as relevant for the query
+     */
     private List<Map.Entry<Document,Double>> documents;
 
     public QueryResult(){

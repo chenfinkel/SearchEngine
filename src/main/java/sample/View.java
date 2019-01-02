@@ -25,6 +25,9 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * this is the main view of the project
+ */
 public class View {
     private Controller control;
     private Stage stage;

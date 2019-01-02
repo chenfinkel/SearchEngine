@@ -8,17 +8,23 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * this class represents a search engine searcher
+ */
 public class Searcher {
 
+    /**
+     * ranker for calculating documents rank
+     */
     private Ranker ranker;
-
+    /**
+     * use semantic improvement or not
+     */
     private boolean semantic;
 
-
-    /** First string is the number of the query, and the second string is for the format for the trec Evel*/
-    //private HashSet<QueryResult> RelevantDoc = new HashSet<>();
-
-
+    /**
+     * the results of the search
+     */
     private List<QueryResult> results;
 
     public Searcher(){
@@ -27,6 +33,10 @@ public class Searcher {
         results = new ArrayList<>();
     }
 
+    /**
+     * run multiple queries
+     * @param queriesPath the path og the queries file
+     */
     public void runQueries(String queriesPath) {
         try {
             File file = new File(queriesPath);
@@ -43,6 +53,7 @@ public class Searcher {
         } catch(Exception e) { e.printStackTrace(); };
     }
 
+    //clean unneccesary words from the description
     private String cleanDescription(String description){
         String[] splitLine = description.split(System.lineSeparator());
         String noLines = "";
@@ -56,13 +67,17 @@ public class Searcher {
         return des;
     }
 
-
+    /**
+     * run a single query
+     * @param query the query to run
+     */
     public void runQuery(String query) {
         QueryResult qr = new QueryResult("");
         qr.setDocuments(ranker.Rank(query));
         results.add(qr);
     }
 
+    //calculate the average length of a document in the corpus
     private double calcAVDL() {
         Iterator<Document> it = SearchEngine.documents.values().iterator();
         int sum = 0;
@@ -72,6 +87,7 @@ public class Searcher {
         int size = SearchEngine.documents.size();
         return sum/size;
     }
+
 
     public List<QueryResult> getResults() {
         return results;

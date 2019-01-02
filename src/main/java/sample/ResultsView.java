@@ -19,8 +19,14 @@ import javafx.util.Pair;
 import java.io.File;
 import java.util.*;
 
+/**
+ * this class represents a result display window
+ */
 public class ResultsView {
 
+    /**
+     * the main view of the program
+     */
     private View view;
 
     private Stage stage;
@@ -32,9 +38,14 @@ public class ResultsView {
     @FXML
     public Button browseResults;
 
-
+    /**
+     * documents retrived as relevant
+     */
     private ArrayList<String> docs = new ArrayList<>();
 
+    /**
+     * matching buttons for the documents retrived, to get primary entities
+     */
     private ArrayList<Button> buttons = new ArrayList<>();
 
 
@@ -79,6 +90,7 @@ public class ResultsView {
         results.setVisible(true);
     }
 
+    //return the primary entities of a document by its matching button
     private void getEntities(Button b){
         String docID = docs.get(buttons.indexOf(b));
         List<Pair<String, Double>> entities = view.getEntities(docID);
@@ -97,6 +109,10 @@ public class ResultsView {
         dialog.show();
     }
 
+    /**
+     * saved the results to a specified path
+     * @param actionEvent
+     */
     public void saveResults(ActionEvent actionEvent) {
         view.saveResults(Results.getText());
         Alert a = new Alert(Alert.AlertType.INFORMATION);
@@ -104,6 +120,9 @@ public class ResultsView {
         a.show();
     }
 
+    /**
+     * browse a path for saving results
+     */
     public void browseResults(){
         DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Choose Results Path");

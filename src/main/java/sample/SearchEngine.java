@@ -43,6 +43,7 @@ public class SearchEngine {
 
     /**
      * the dictionary of the search engine after prasing and indexing
+     * for terms, documetns, languages and cities
      */
     public static ConcurrentHashMap<String, Term> dictionary;
 
@@ -115,6 +116,7 @@ public class SearchEngine {
         }
     }
 
+    //loads languages from disk
     private void loadLanguages(String path, boolean stem) {
         try {
             FileReader fr = new FileReader(path + "\\languages.txt");
@@ -129,7 +131,7 @@ public class SearchEngine {
             e.printStackTrace();
         }
     }
-
+    //loads cities from disk
     private void loadCities(String path, boolean stem) {
         try {
             FileReader fr = new FileReader(path + "\\cities.txt");
@@ -153,7 +155,7 @@ public class SearchEngine {
             e.printStackTrace();
         }
     }
-
+    //loads TFIDF from disk
     private void loadTFIDF(String path, boolean stem) {
         try {
             if (stem)
@@ -174,6 +176,7 @@ public class SearchEngine {
         }
     }
 
+    //loads documents from disk
     private void loadDocs(String path, boolean stem) {
         try {
             if (stem)
@@ -211,7 +214,7 @@ public class SearchEngine {
             e.printStackTrace();
         }
     }
-
+    //loads dictionary from disk
     private void loadDictionary(String path, boolean stem) throws Exception {
         dictionary = new ConcurrentHashMap<>();
         if (stem)
@@ -276,6 +279,7 @@ public class SearchEngine {
         return totalTime;
     }
 
+    //save the dictionaries on the disk
     private void save() {
         try {
             Thread t1 = new Thread(new Runnable() {
@@ -373,6 +377,7 @@ public class SearchEngine {
 
     }
 
+    //save TFIDF on the disk
     private void saveTfIdf() {
         try {
             String path = postingPath;
@@ -424,7 +429,13 @@ public class SearchEngine {
         }
     }
 
-
+    /**
+     * run a file with multiple queries
+     * @param queryFilePath the path of the queries file
+     * @param semantic use semantic improvement or not
+     * @param cities cities to filter by
+     * @return results for the queries
+     */
     public List<QueryResult> RunMultipleQueries(String queryFilePath, boolean semantic, HashSet<String> cities) {
         searcher.setSemantic(semantic);
         searcher.setCities(cities);
@@ -433,10 +444,21 @@ public class SearchEngine {
         return results;
     }
 
+    /**
+     * save results to file
+     * @param path path to save to
+     */
     public void saveResults(String path) {
         resultsToFile(path, searcher.getResults());
     }
 
+    /**
+     * run a single query
+     * @param query the query to run
+     * @param semantic use semantic improvement or not
+     * @param cities cities to filter by
+     * @return results for the query
+     */
     public List<QueryResult> RunSingleQuery(String query, boolean semantic, HashSet<String> cities) {
         searcher.setSemantic(semantic);
         searcher.setCities(cities);
@@ -444,6 +466,7 @@ public class SearchEngine {
         return searcher.getResults();
     }
 
+    //save results to file
     private void resultsToFile(String path, List<QueryResult> results) {
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter(path + "\\results.txt"));
@@ -461,6 +484,7 @@ public class SearchEngine {
         }
     }
 
+    //save dictionary to file
     private void saveDictionary() {
         try {
             String path = postingPath;
@@ -484,6 +508,7 @@ public class SearchEngine {
         }
     }
 
+    //save cities to file
     private void saveCities() {
         try {
             String path = postingPath;
@@ -517,38 +542,9 @@ public class SearchEngine {
         }
     }
 
+    //get primary entities for a file
     public List<Pair<String, Double>> getEntities(String docID) {
         return documents.get(docID).getPrimaryEntities();
-    }
-
-    private void setCitiesDocs() {
-        String path = postingPath;
-        if (stem)
-            path = path + "\\stemmed";
-        Iterator<City> it = cities.values().iterator();
-        while (it.hasNext()) {
-            City c = it.next();
-            String city = c.getCity();
-            Term t = null;
-            if (dictionary.contains(city))
-                t = dictionary.get(city);
-            else if (dictionary.contains(city.toLowerCase()))
-                t = dictionary.get(city.toLowerCase());
-            if (t != null) {
-                try {
-                    Stream<String> lines = Files.lines(Paths.get(path + "\\" + Character.toLowerCase(city.charAt(0)) + ".txt"));
-                    String line = lines.skip(t.postingLine - 1).findFirst().get();
-                    String[] split = line.split("#!");
-                    String[] split2 = split[1].split("!");
-                    for (int i = 0; i < split2.length; i++) {
-                        String[] split3 = split2[i].split("\\*");
-                        c.addDocument(documents.get(split3[0]));
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
     /**

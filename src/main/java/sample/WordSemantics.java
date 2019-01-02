@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Queue;
 
 /**
- * A class to import data from the web = https://www.datamuse.com/api/
+ * A class that connects to datamuse api to get semantic words
  */
 public class WordSemantics {
 
@@ -22,14 +22,13 @@ public class WordSemantics {
     private JsonElement triggered;
     OkHttpClient client;
 
-    /** Constructor - Makes content with the websites data and uses Jason to parse it
-     * @throws IOException In case the link is invalid
-     */
+    /** Constructor*/
     public WordSemantics()
     {
         client = new OkHttpClient();
     }
 
+    //saves json elements conatining semantic words for a given word
     private void setWord(String word)
     {
         try
@@ -51,7 +50,7 @@ public class WordSemantics {
         catch (IOException e) { e.printStackTrace(); }
     }
 
-    /** if the word has semantics words, the function returns those words
+    /** returns semantic words from json objects
      * @return semantics words
      */
     public HashSet<String> getSemanticsWords(String word)

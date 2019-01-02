@@ -6,12 +6,24 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
 
+/**
+ * this class ranks relevant documents for a query
+ */
 public class Ranker {
 
+    /**
+     * average length of document in the corpus
+     */
     private double avdl;
 
+    /**
+     * use semantic improvement or not
+     */
     private boolean semantic;
 
+    /**
+     * cities to filter results
+     */
     private HashSet<String> cities;
 
     public Ranker(double avdl, boolean semantic) {
@@ -20,6 +32,11 @@ public class Ranker {
         cities = new HashSet<>();
     }
 
+    /**
+     * rank documents for a query
+     * @param title the query searched
+     * @return a list of relevent documents and their ranking
+     */
     public List<Map.Entry<Document, Double>> Rank(String title) {
         try {
             Parse p = new Parse();
@@ -57,6 +74,7 @@ public class Ranker {
         }
     }
 
+    //returns semantic words for the query
     private HashSet<String> getSemantics(LinkedHashMap<String, Integer> parsedQuery) {
         Iterator<String> it = parsedQuery.keySet().iterator();
         String s = "";
@@ -68,6 +86,7 @@ public class Ranker {
         return semantics;
     }
 
+    //get semantic words for a query and parsing it
     private void semanticTreatment(LinkedHashMap<String, Integer> parsedQuery) {
         Parse p = new Parse();
         HashSet<String> semantics = getSemantics(parsedQuery);
@@ -90,6 +109,7 @@ public class Ranker {
         parsedQuery.putAll(parsedSemantics);
     }
 
+    //returns the matching term objects for the query words
     private LinkedHashMap<Term, Integer> getQueryTerms(LinkedHashMap<String, Integer> parsedQuery) {
         LinkedHashMap<Term, Integer> qeuryTerms = new LinkedHashMap<>();
         Iterator<Map.Entry<String, Integer>> it = parsedQuery.entrySet().iterator();
@@ -105,6 +125,7 @@ public class Ranker {
         return qeuryTerms;
     }
 
+    //returns the documents the query terms appeared in
     private LinkedHashMap<Term, LinkedHashMap<String, Integer>> getTermsDocs(LinkedHashMap<Term, Integer> queryTerms) {
         String path = SearchEngine.postingPath;
         if (SearchEngine.stem)
@@ -132,6 +153,7 @@ public class Ranker {
         return postingLines;
     }
 
+    //calculate the ranking of a document by bm25
     private double CalcDocRank(LinkedHashMap<Term, Integer> queryTerms, LinkedHashMap<Term, LinkedHashMap<String, Integer>> termsDocs, Document doc) {
         double ans = 0, bm25 = 0, cosSim = 0;
         int tfQuery = 0, tfDoc;
@@ -155,6 +177,7 @@ public class Ranker {
         return bm25;
     }
 
+    //cos similarity function
     private double cosSimilarity(Term t, Document doc, int tfDoc, int numOfQueryTerms) {
         int numOfDocs = SearchEngine.documents.size();
         double numerator = 0;
@@ -165,6 +188,7 @@ public class Ranker {
         return numerator / denominator;
     }
 
+    //bm25 function
     private double BM25(Term t, Document doc, int tfDoc, int tfQuery) {
         double B = 0.315;
         double K = 1.155;
@@ -185,6 +209,10 @@ public class Ranker {
         this.cities.addAll(cities);
     }
 
+    /**
+     *
+     * @return the documents that are from or contains the cities chosen to filter by
+     */
     public LinkedHashSet<Document> getCityDocs() {
         Iterator<String> it = cities.iterator();
         LinkedHashSet<Document> docs = new LinkedHashSet<>();
@@ -196,6 +224,9 @@ public class Ranker {
         return docs;
     }
 
+    /**
+     * comperator for sort by rank
+     */
     public class sort implements Comparator<Object> {
         public int compare(Object o1, Object o2) {
             Map.Entry<Document, Double> s1 = (Map.Entry<Document, Double>) o1;
