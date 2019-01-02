@@ -59,14 +59,14 @@ public class WordSemantics {
         setWord(word);
         HashSet<String> semanticsWords = new HashSet<>();
         JsonArray words = similarMeaning.getAsJsonArray();
-        for (int i = 0; i < words.size() && i < 5; i++)
+        for (int i = 0; i < words.size() && i < 2; i++)
         {
             JsonObject objectWordDetails = (JsonObject) (words.get(i));
             String semanticWord = objectWordDetails.get("word").getAsString();
             semanticsWords.add(semanticWord);
         }
         JsonArray words2 = triggered.getAsJsonArray();
-        for (int i = 0; i < words2.size() && i < 5; i++)
+        for (int i = 0; i < words2.size() && i < 2; i++)
         {
             JsonObject objectWordDetails = (JsonObject) (words2.get(i));
             String semanticWord = objectWordDetails.get("word").getAsString();

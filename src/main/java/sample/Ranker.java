@@ -58,17 +58,13 @@ public class Ranker {
     }
 
     private HashSet<String> getSemantics(LinkedHashMap<String, Integer> parsedQuery) {
-        HashSet<String> semantics = new HashSet<>();
         Iterator<String> it = parsedQuery.keySet().iterator();
+        String s = "";
         while (it.hasNext()) {
-            WordSemantics ws = new WordSemantics();
-            HashSet<String> sem = ws.getSemanticsWords(it.next());
-            Iterator<String> it2 = sem.iterator();
-            while (it2.hasNext()) {
-                String semanticWord = it2.next();
-                semantics.add(semanticWord);
-            }
+            s = s+ it.next();
         }
+        WordSemantics ws = new WordSemantics();
+        HashSet<String> semantics = ws.getSemanticsWords(s);
         return semantics;
     }
 
@@ -138,7 +134,6 @@ public class Ranker {
 
     private double CalcDocRank(LinkedHashMap<Term, Integer> queryTerms, LinkedHashMap<Term, LinkedHashMap<String, Integer>> termsDocs, Document doc) {
         double ans = 0, bm25 = 0, cosSim = 0;
-        String term = "";
         int tfQuery = 0, tfDoc;
         Iterator<Map.Entry<Term, LinkedHashMap<String, Integer>>> it = termsDocs.entrySet().iterator();
         while (it.hasNext()) {
@@ -157,8 +152,7 @@ public class Ranker {
                 e.printStackTrace();
             }
         }
-        ans = 0.1 * bm25 + 0.9 * cosSim;
-        return ans;
+        return bm25;
     }
 
     private double cosSimilarity(Term t, Document doc, int tfDoc, int numOfQueryTerms) {

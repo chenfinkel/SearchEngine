@@ -35,10 +35,25 @@ public class Searcher {
             for(int i = 0; i < QueryList.length; i++) {
                 String num = StringUtils.substringBetween(QueryList[i], "<num> Number: ", System.lineSeparator());
                 String title = StringUtils.substringBetween(QueryList[i], "<title> ", System.lineSeparator());
-                List<Map.Entry<Document,Double>> relevantDocs = ranker.Rank(title);
+                String description = StringUtils.substringBetween(QueryList[i], "<desc> Description: ", "<narr>");
+                description = cleanDescription(description);
+                List<Map.Entry<Document,Double>> relevantDocs = ranker.Rank(title + description);
                 results.add(new QueryResult(num, relevantDocs));
             }
         } catch(Exception e) { e.printStackTrace(); };
+    }
+
+    private String cleanDescription(String description){
+        String[] splitLine = description.split(System.lineSeparator());
+        String noLines = "";
+        for (int i = 0; i < splitLine.length; i++)
+            noLines = noLines + splitLine[i]+" ";
+        String[] splitSpace = noLines.split(" ");
+        String des = "";
+        for (int i = 0; i < splitSpace.length; i++)
+            if (!splitSpace[i].equalsIgnoreCase("identify") && !splitSpace[i].equalsIgnoreCase("documents"))
+                des = des + splitSpace[i] + " ";
+        return des;
     }
 
 
